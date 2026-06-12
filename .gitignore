@@ -1,0 +1,8 @@
+node_modules/
+dist/
+tmp/
+
+# 개인 세이브 파일 및 구버전 (리포에 포함 금지)
+111.txt
+rpg_game*.html
+*.rpgsave.json
