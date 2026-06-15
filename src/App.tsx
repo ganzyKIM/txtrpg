@@ -2,7 +2,7 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import type { GameState, ReplyMode, Settings } from './types';
 import { emptyGame, newTurn } from './types';
 import { proxyGenerateImage, proxyGenerateText } from './api/proxy';
-import { buildMessages, buildSystemInstruction, maintainMemory } from './memory/memory';
+import { buildMessages, buildSystemInstruction, maintainMemory, extractNewCharacters } from './memory/memory';
 import { DEFAULT_TEXT_TIER } from './config/models';
 import { initialStore, storeReducer } from './state/gameStore';
 import { downloadText, exportPlainTxt, openSaveFile, parseSave, serializeSave } from './save/saveFile';
@@ -179,8 +179,16 @@ export default function App() {
       const aiTurn = newTurn('ai', aiText);
       dispatch({ type: 'addAiTurn', turn: aiTurn });
 
-      const afterTurns = userTurn ? [...game.turns, userTurn, aiTurn] : [...game.turns, aiTurn];
-      void runMemoryMaintenance({ ...game, turns: afterTurns });
+      const afterGame = { ...game, turns: userTurn ? [...game.turns, userTurn, aiTurn] : [...game.turns, aiTurn] };
+      void runMemoryMaintenance(afterGame);
+      void (async () => {
+        try {
+          const charUpdate = await extractNewCharacters(afterGame, aiText);
+          if (charUpdate) dispatch({ type: 'memoryUpdate', update: charUpdate });
+        } catch (err) {
+          console.error('인물 추출 실패:', err);
+        }
+      })();
     } catch (err) {
       if (displayUserText !== null) dispatch({ type: 'rollbackExchange' });
       alert(`생성 실패: ${(err as Error).message}`);

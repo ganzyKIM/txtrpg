@@ -73,6 +73,51 @@ export interface MemoryUpdate {
 }
 
 /**
+ * 최근 AI 응답에서 새로 등장한 주요 인물을 감지해 fixedMemory에 추가.
+ * 이미 메모리에 기록된 인물은 건너뛴다.
+ */
+export async function extractNewCharacters(
+  state: GameState,
+  latestAiText: string,
+): Promise<MemoryUpdate | null> {
+  const prompt = `당신은 텍스트 RPG의 캐릭터 데이터베이스 관리자입니다.
+아래 [최신 장면]에서 새롭게 등장한 '주요 인물'을 찾아 기록하세요.
+
+[판단 기준]
+- 이름이나 별명이 있고, 대사·외모·성격·역할 중 하나 이상이 묘사된 인물만 기록합니다.
+- 스쳐 지나가는 단역, 군중, 이름 없는 배경 인물은 무시합니다.
+- [기존 메모리]에 이미 언급된 인물은 절대 다시 기록하지 않습니다.
+
+[출력 형식]
+새 인물이 있으면 아래 형식으로 한 줄씩 출력하세요 (마크다운 없이):
+• 이름: ○○ / 외형·특징: ○○ / 주인공과의 관계: ○○
+
+새 인물이 전혀 없으면 반드시 "없음"이라고만 출력하세요.
+
+[기존 메모리]
+${state.fixedMemory.trim() || '(아직 없음)'}
+
+[최신 장면]
+${latestAiText}`;
+
+  const result = (
+    await proxyGenerateText('standard', [{ role: 'user', text: prompt }], { temperature: 0.1 })
+  ).text.trim();
+
+  if (!result || result === '없음' || result.startsWith('없음')) return null;
+
+  const newMemory = state.fixedMemory.trim()
+    ? `${state.fixedMemory.trim()}\n\n[등장인물]\n${result}`
+    : `[등장인물]\n${result}`;
+
+  // 이미 [등장인물] 섹션이 있으면 그 안에 추가
+  if (state.fixedMemory.includes('[등장인물]')) {
+    return { fixedMemory: `${state.fixedMemory.trim()}\n${result}` };
+  }
+  return { fixedMemory: newMemory };
+}
+
+/**
  * 백그라운드 메모리 유지보수.
  * 1) 윈도우 초과분을 롤링 요약으로 접는다.
  * 2) 요약이 너무 길면 장기 설정을 고정 메모리로 승격하고 요약을 재압축한다.
