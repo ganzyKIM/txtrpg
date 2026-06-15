@@ -83,11 +83,11 @@ export default function ChatLog({ turns, busy, onGenerateImage }: Props) {
           data-turn-role={turn.role}
         >
           {turn.text}
-          {turn.images?.map((b64, i) => (
+          {turn.images?.map((img, i) => (
             <img
               key={i}
               className="generated-image"
-              src={`data:image/png;base64,${b64}`}
+              src={img.startsWith('http') || img.startsWith('data:') ? img : `data:image/png;base64,${img}`}
               alt="생성된 삽화"
             />
           ))}

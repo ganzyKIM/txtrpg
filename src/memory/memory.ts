@@ -1,5 +1,5 @@
 import type { GameState, Turn } from '../types';
-import { generateText, type ChatMessage } from '../api/gemini';
+import { proxyGenerateText, type ChatMessage } from '../api/proxy';
 
 /** 최근 윈도우 최대 턴 수. 초과하면 오래된 턴부터 롤링 요약으로 접는다 */
 export const RECENT_WINDOW_MAX = 16;
@@ -73,8 +73,6 @@ export interface MemoryUpdate {
  */
 export async function maintainMemory(
   state: GameState,
-  apiKey: string,
-  model: string,
   forceRoll = false,
 ): Promise<MemoryUpdate | null> {
   const update: MemoryUpdate = {};
@@ -108,7 +106,7 @@ ${state.rollingSummary.trim() || '(아직 없음)'}
 ${foldText}`;
 
     summaryNow = (
-      await generateText(apiKey, model, [{ role: 'user', text: foldPrompt }], {
+      await proxyGenerateText('standard', [{ role: 'user', text: foldPrompt }], {
         temperature: 0.2,
       })
     ).text.trim();
@@ -134,7 +132,7 @@ ${state.fixedMemory.trim()}
 ${summaryNow}`;
 
     const lore = (
-      await generateText(apiKey, model, [{ role: 'user', text: extractPrompt }], {
+      await proxyGenerateText('standard', [{ role: 'user', text: extractPrompt }], {
         temperature: 0.1,
       })
     ).text.trim();
@@ -150,7 +148,7 @@ ${summaryNow}`;
 ${summaryNow}`;
 
     update.rollingSummary = (
-      await generateText(apiKey, model, [{ role: 'user', text: compressPrompt }], {
+      await proxyGenerateText('standard', [{ role: 'user', text: compressPrompt }], {
         temperature: 0.2,
       })
     ).text.trim();

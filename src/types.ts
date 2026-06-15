@@ -21,11 +21,11 @@ export interface GameState {
   archive: string;
 }
 
+/** 유저가 고르는 텍스트 모델 등급 (실제 모델 ID/단가는 서버가 매핑) */
+export type TextTier = 'standard' | 'pro';
+
 export interface Settings {
-  apiKey: string;
-  textModel: string;
-  imageModel: string;
-  textModelTokenLimit: number;
+  textTier: TextTier;
 }
 
 export type ReplyMode = 'textOnly' | 'choice';

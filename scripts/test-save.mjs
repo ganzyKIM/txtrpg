@@ -14,7 +14,7 @@ if (!game.fixedMemory.includes('알데리온 대륙')) throw new Error('고정 �
 if (game.turns[game.turns.length - 1].text.length > 5100) throw new Error('테일 절단 실패');
 
 // 2) JSON 직렬화 → 재파싱 라운드트립
-const settings = { apiKey: 'x', textModel: 'gemini-test', imageModel: 'imagen-test' };
+const settings = { textTier: 'pro' };
 game.turns.push({ id: 'img-turn', role: 'ai', text: '삽화 턴', images: ['QUJD'] });
 game.rollingSummary = '중간 요약';
 game.summarizedTurnCount = 1;
@@ -27,7 +27,7 @@ const same =
   reparsed.game.summarizedTurnCount === game.summarizedTurnCount &&
   reparsed.game.archive === game.archive &&
   JSON.stringify(reparsed.game.turns) === JSON.stringify(game.turns) &&
-  reparsed.settings.textModel === 'gemini-test';
+  reparsed.settings.textTier === 'pro';
 console.log('모든 필드 보존:', same);
 if (!same) throw new Error('JSON 라운드트립 실패');
 

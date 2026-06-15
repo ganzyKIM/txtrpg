@@ -1,0 +1,117 @@
+// Edge Function: generate-text
+// Verifies the user's JWT, checks credit balance, calls Gemini with the
+// server-side key, measures token usage, deducts credits atomically, and
+// records a ledger entry. The browser never sees the Gemini key.
+import { createClient } from 'jsr:@supabase/supabase-js@2';
+
+const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+// Educational literary-fiction generator dealing only with fictional
+// characters and stories, so all safety filters are disabled.
+const SAFETY_SETTINGS = [
+  { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+  { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+];
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function json(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...CORS, 'Content-Type': 'application/json' },
+  });
+}
+
+interface ModelCfg {
+  model: string;
+  in_rate: number; // USD per 1M input tokens
+  out_rate: number; // USD per 1M output tokens
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
+
+  try {
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) return json({ error: '로그인이 필요합니다.' }, 401);
+
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+    if (!GEMINI_API_KEY) return json({ error: '서버에 API 키가 설정되지 않았습니다.' }, 500);
+
+    // Identify the caller from their JWT
+    const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !user) return json({ error: '인증에 실패했습니다.' }, 401);
+
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY);
+
+    // Load operator config
+    const { data: cfgRows } = await admin.from('config').select('key, value');
+    const cfg = Object.fromEntries((cfgRows ?? []).map((r) => [r.key, r.value]));
+    const fx = Number(cfg.fx ?? 1400);
+    const markup = Number(cfg.markup ?? 2);
+    const models = (cfg.models ?? {}) as Record<string, ModelCfg>;
+
+    const { tier = 'standard', messages = [], system, temperature } = await req.json();
+    const m = models[tier] ?? models['standard'];
+    if (!m) return json({ error: '모델 설정 오류입니다.' }, 500);
+
+    // Pre-check balance (refuse only when empty; exact cost known after the call)
+    const { data: prof } = await admin
+      .from('profiles').select('credits').eq('id', user.id).single();
+    if (!prof || prof.credits <= 0) {
+      return json({ error: '크레딧이 부족합니다. 충전이 필요합니다.' }, 402);
+    }
+
+    const body: Record<string, unknown> = {
+      contents: (messages as Array<{ role: string; text: string }>).map((x) => ({
+        role: x.role,
+        parts: [{ text: x.text }],
+      })),
+      safetySettings: SAFETY_SETTINGS,
+      generationConfig: { temperature: temperature ?? 0.75 },
+    };
+    if (system) body.system_instruction = { parts: [{ text: system }] };
+
+    const gRes = await fetch(
+      `${GEMINI_BASE}/models/${m.model}:generateContent?key=${GEMINI_API_KEY}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+    );
+    const gData = await gRes.json();
+    if (gData.error) return json({ error: gData.error.message }, 502);
+
+    const text: string = (gData.candidates?.[0]?.content?.parts ?? [])
+      .map((p: { text?: string }) => p.text ?? '').join('');
+    if (!text) return json({ error: '응답에서 텍스트를 추출하지 못했습니다.' }, 502);
+
+    const inTok: number = gData.usageMetadata?.promptTokenCount ?? 0;
+    const outTok: number = gData.usageMetadata?.candidatesTokenCount ?? 0;
+    const credits = Math.max(
+      1,
+      Math.ceil(((inTok * m.in_rate + outTok * m.out_rate) / 1_000_000) * fx * markup),
+    );
+
+    const { data: balance, error: spendErr } = await admin.rpc('spend_credits', {
+      p_user: user.id,
+      p_amount: credits,
+      p_type: 'spend_text',
+      p_meta: { tier, model: m.model, in: inTok, out: outTok },
+    });
+    if (spendErr) return json({ error: '크레딧 차감 실패: ' + spendErr.message }, 500);
+
+    return json({ text, balance, credits, usage: { in: inTok, out: outTok } });
+  } catch (e) {
+    return json({ error: String((e as Error)?.message ?? e) }, 500);
+  }
+});

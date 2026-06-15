@@ -1,4 +1,4 @@
-import type { GameState, Settings, Turn } from '../types';
+import type { GameState, Settings, TextTier, Turn } from '../types';
 import { newTurn } from '../types';
 
 const SAVE_VERSION = 1 as const;
@@ -12,12 +12,12 @@ export interface SaveFileData {
   turns: Turn[];
   summarizedTurnCount: number;
   archive: string;
-  settings?: { textModel: string; imageModel: string };
+  settings?: { textTier?: TextTier };
 }
 
 export interface ParsedSave {
   game: GameState;
-  settings?: { textModel: string; imageModel: string };
+  settings?: { textTier?: TextTier };
 }
 
 export function serializeSave(
@@ -36,7 +36,7 @@ export function serializeSave(
       : game.turns.map(({ images: _images, ...rest }) => rest),
     summarizedTurnCount: game.summarizedTurnCount,
     archive: game.archive,
-    settings: { textModel: settings.textModel, imageModel: settings.imageModel },
+    settings: { textTier: settings.textTier },
   };
   return JSON.stringify(data, null, 1);
 }
