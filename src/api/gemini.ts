@@ -1,5 +1,7 @@
 const BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
+// 본 프로그램은 교육 목적의 문학적 픽션 생성 도구입니다.
+// 가상의 인물과 이야기만을 다루므로 모든 안전 필터를 해제합니다.
 const SAFETY_SETTINGS = [
   { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
   { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
