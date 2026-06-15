@@ -72,65 +72,38 @@ export default function ChatLog({ turns, busy, onGenerateImage, onToggleExclude 
     onGenerateImage(turnId, text);
   }
 
-  function handleParagraphImage(turnId: string, paragraph: string) {
-    onGenerateImage(turnId, paragraph);
-  }
-
   return (
     <div id="chatBox" ref={boxRef} onMouseUp={handleMouseUp}>
-      {turns.map((turn) => {
-        const paragraphs = turn.role === 'ai' ? turn.text.split('\n\n').filter(p => p.trim()) : null;
-        return (
-          <div
-            key={turn.id}
-            className={
-              (turn.role === 'user' ? 'user-msg' : turn.role === 'ai' ? 'ai-msg' : 'system-msg') +
-              (turn.excluded ? ' turn-excluded' : '')
-            }
-            data-turn-id={turn.id}
-            data-turn-role={turn.role}
-          >
-            {turn.role !== 'system' && (
-              <button
-                className="turn-exclude-toggle"
-                title={turn.excluded ? '저장에 다시 포함' : '이 턴을 저장에서 제외'}
-                onClick={() => onToggleExclude(turn.id)}
-              >
-                {turn.excluded ? '↩ 저장에 포함' : '✕ 저장 제외'}
-              </button>
-            )}
-            {paragraphs ? (
-              <div className="ai-paragraphs">
-                {paragraphs.map((para, i) => (
-                  <div key={i} className="ai-paragraph-wrapper">
-                    <p className="ai-paragraph">{para}</p>
-                    {!busy && (
-                      <button
-                        className="para-img-btn"
-                        title="이 문단을 이미지로 생성"
-                        onClick={() => handleParagraphImage(turn.id, para)}
-                        aria-label="이미지로 변환"
-                      >
-                        🖼️
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              turn.text
-            )}
-            {turn.images?.map((img, i) => (
-              <img
-                key={i}
-                className="generated-image"
-                src={img.startsWith('http') || img.startsWith('data:') ? img : `data:image/png;base64,${img}`}
-                alt="생성된 삽화"
-              />
-            ))}
-          </div>
-        );
-      })}
+      {turns.map((turn) => (
+        <div
+          key={turn.id}
+          className={
+            (turn.role === 'user' ? 'user-msg' : turn.role === 'ai' ? 'ai-msg' : 'system-msg') +
+            (turn.excluded ? ' turn-excluded' : '')
+          }
+          data-turn-id={turn.id}
+          data-turn-role={turn.role}
+        >
+          {turn.role !== 'system' && (
+            <button
+              className="turn-exclude-toggle"
+              title={turn.excluded ? '저장에 다시 포함' : '이 턴을 저장에서 제외'}
+              onClick={() => onToggleExclude(turn.id)}
+            >
+              {turn.excluded ? '↩ 저장에 포함' : '✕ 저장 제외'}
+            </button>
+          )}
+          {turn.text}
+          {turn.images?.map((img, i) => (
+            <img
+              key={i}
+              className="generated-image"
+              src={img.startsWith('http') || img.startsWith('data:') ? img : `data:image/png;base64,${img}`}
+              alt="생성된 삽화"
+            />
+          ))}
+        </div>
+      ))}
       {imgBtn && !busy && (
         <button
           id="imgGenBtn"

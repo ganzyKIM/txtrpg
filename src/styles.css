@@ -113,47 +113,6 @@ body {
   padding-left: 16px;
   border-left: 3px solid #dce8fb;
 }
-.ai-paragraphs {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-.ai-paragraph-wrapper {
-  display: flex;
-  gap: 6px;
-  align-items: flex-start;
-  margin-bottom: 12px;
-  position: relative;
-}
-.ai-paragraph {
-  flex: 1;
-  margin: 0;
-  line-height: inherit;
-  font-size: inherit;
-  color: inherit;
-  white-space: pre-wrap;
-}
-.para-img-btn {
-  flex-shrink: 0;
-  padding: 4px 8px;
-  font-size: 11px;
-  background: rgba(26,115,232,0.08);
-  border: 1px solid #d0e4ff;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
-  font-family: inherit;
-  color: #1a73e8;
-  line-height: 1;
-  margin-top: 2px;
-}
-.para-img-btn:hover {
-  background: rgba(26,115,232,0.16);
-  border-color: #1a73e8;
-}
-.para-img-btn:active {
-  transform: scale(0.95);
-}
 .system-msg {
   color: #b3b9c6; font-style: italic;
   margin-bottom: 18px; font-size: 9.5pt;
@@ -256,6 +215,39 @@ textarea.chat-input::placeholder { color: #c0c5ce; }
   animation: loading-slide 1.3s ease-in-out infinite;
 }
 @keyframes loading-slide { 0% { left: -40%; } 100% { left: 110%; } }
+
+/* ── Image Generation Area ───────────────────────────────── */
+#image-gen-area {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid #f0f2f6;
+}
+#image-gen-area label {
+  display: block; font-size: 12px; font-weight: 600;
+  color: #4b5263; margin-bottom: 6px;
+}
+textarea.image-input {
+  width: 100%; border: 1px solid #e4e7ec; outline: none;
+  resize: none; font-family: inherit;
+  font-size: 10.5pt; line-height: 1.6; padding: 8px;
+  overflow: hidden; background: #fafbfc;
+  color: #1c1e26; border-radius: 6px;
+  transition: border-color 0.12s, background 0.12s;
+}
+textarea.image-input:focus { border-color: #1a73e8; background: #fff; }
+textarea.image-input::placeholder { color: #c0c5ce; font-size: 10pt; }
+textarea.image-input:disabled { background: #f4f5f8; color: #9ea5b2; }
+.btn-image-gen {
+  margin-top: 8px; padding: 7px 16px; font-size: 12px; font-weight: 600;
+  background: linear-gradient(135deg, #34a853, #1e8e3e);
+  color: #fff; border: none; border-radius: 6px;
+  cursor: pointer; font-family: inherit;
+  transition: background 0.12s, transform 0.08s;
+}
+.btn-image-gen:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2d9a47, #188038);
+}
+.btn-image-gen:active:not(:disabled) { transform: scale(0.97); }
+.btn-image-gen:disabled { background: #ccc; cursor: default; opacity: 0.5; }
 
 select.mode-select {
   border: 1px solid #e4e7ec; outline: none;

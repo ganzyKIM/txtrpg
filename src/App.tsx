@@ -421,6 +421,11 @@ ${store.game.fixedMemory}
             canRedo={store.future.length > 0}
             onUndo={() => dispatch({ type: 'undo' })}
             onRedo={() => dispatch({ type: 'redo' })}
+            onGenerateImage={(text) => {
+              const lastAiTurn = [...game.turns].reverse().find((t) => t.role === 'ai');
+              if (lastAiTurn) void handleGenerateImage(lastAiTurn.id, text);
+            }}
+            lastTurnId={game.turns.at(-1)?.id}
           />
         </div>
       ) : (

@@ -10,6 +10,8 @@ interface Props {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  onGenerateImage?: (text: string) => void;
+  lastTurnId?: string;
 }
 
 export default function InputBar({
@@ -21,9 +23,13 @@ export default function InputBar({
   canRedo,
   onUndo,
   onRedo,
+  onGenerateImage,
+  lastTurnId,
 }: Props) {
   const [text, setText] = useState('');
+  const [imgText, setImgText] = useState('');
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const imgRef = useRef<HTMLTextAreaElement>(null);
 
   function autoResize() {
     const ta = taRef.current;
@@ -45,6 +51,14 @@ export default function InputBar({
       e.preventDefault();
       send();
     }
+  }
+
+  function handleGenerateImage() {
+    const trimmed = imgText.trim();
+    if (!trimmed || !onGenerateImage) return;
+    onGenerateImage(trimmed);
+    setImgText('');
+    if (imgRef.current) imgRef.current.style.height = 'auto';
   }
 
   return (
@@ -95,6 +109,35 @@ export default function InputBar({
           </div>
         </div>
       </div>
+
+      {onGenerateImage && lastTurnId && (
+        <div id="image-gen-area">
+          <label htmlFor="img-input">🖼️ 이미지로 생성할 장면 설명 (선택)</label>
+          <textarea
+            id="img-input"
+            ref={imgRef}
+            className="image-input"
+            rows={2}
+            placeholder="이야기에서 가장 인상적인 부분을 복붙하세요. 그 장면의 삽화가 생성됩니다."
+            value={imgText}
+            disabled={!!busyMessage}
+            onChange={(e) => {
+              setImgText(e.target.value);
+              if (imgRef.current) {
+                imgRef.current.style.height = 'auto';
+                imgRef.current.style.height = `${imgRef.current.scrollHeight}px`;
+              }
+            }}
+          />
+          <button
+            className="btn-image-gen"
+            disabled={!imgText.trim() || !!busyMessage}
+            onClick={handleGenerateImage}
+          >
+            ✨ 삽화 생성
+          </button>
+        </div>
+      )}
     </div>
   );
 }
