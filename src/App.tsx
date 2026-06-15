@@ -46,7 +46,7 @@ const MODE_INSTRUCTIONS: Record<ReplyMode, string> = {
   textOnly:
     '(시스템 절대 지시: 플레이어의 말에 대답하거나 상황을 요약, 설명하지 마시오. 오직 소설의 다음 장면 본문만을 이어서 자연스럽게 작성하시오. 라이트노벨 문체로, 인물의 심리·대사·오감 묘사를 풍부하게 담아 최소 5~8개 문단 분량으로 충분히 길고 자세하게 전개하시오.)',
   choice:
-    '(시스템 절대 지시: 상황의 결과를 라이트노벨 문체로 인물의 심리·대사·오감 묘사를 풍부하게 담아 최소 5~8개 문단 분량으로 충분히 길고 자세하게 묘사한 뒤, 다음 행동을 A, B, C 세 가지 객관식으로만 제시하시오.)',
+    '(시스템 절대 지시: 상황의 결과를 라이트노벨 문체로 인물의 심리·대사·오감 묘사를 풍부하게 담아 최소 5~8개 문단 분량으로 충분히 길고 자세하게 묘사하시오. 단, 이야기의 흐름은 한 번에 크게 전진시키지 말고, 지금 이 순간의 장면과 감정에 충분히 머물러라. 묘사가 끝난 뒤, 현재 상황에서 자연스럽게 이어지는 소소한 다음 행동을 A, B, C 세 가지 객관식으로만 제시하시오. 선택지 하나하나는 이야기를 급격히 전환하거나 큰 사건을 일으키지 않는, 장면 안에서의 작은 선택이어야 한다.)',
 };
 
 export default function App() {
@@ -363,7 +363,10 @@ ${store.game.fixedMemory}
                 const body = encodeURIComponent(
                   `안녕하세요, 크레딧 충전을 요청드립니다.\n\n계정: ${user.email}\n현재 크레딧: ${profile.credits.toLocaleString()}cr\n\n원하는 충전량:\n\n감사합니다.`
                 );
-                window.open(`mailto:kimdh12307@gmail.com?subject=${subject}&body=${body}`);
+                window.open(
+                  `https://mail.google.com/mail/?view=cm&fs=1&to=kimdh12307@gmail.com&su=${subject}&body=${body}`,
+                  '_blank'
+                );
               }}
             >
               {profile.credits.toLocaleString()}cr ✉

@@ -3,20 +3,21 @@ import { useEffect, useRef } from 'react';
 interface Star {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
-  px: number; // 마우스 반발이 적용된 표시 좌표
+  /** 별 고유의 미세한 드리프트 방향/속도 */
+  dvx: number;
+  dvy: number;
+  px: number;
   py: number;
   r: number;
   baseA: number;
-  tw: number; // 반짝임 위상
+  tw: number;
   twSpeed: number;
 }
 
 /**
  * 마우스와 상호작용하는 우주 파티클 배경.
- * 무수한 별들이 유기적으로 떠다니고, 가까운 별끼리 성좌처럼 연결되며,
- * 커서 주변의 별들은 밝아지고 부드럽게 흩어진다.
+ * 별들이 화면 전체를 가로지르는 큰 조류(global flow)를 타며 흐르고,
+ * 가까운 별끼리 성좌처럼 연결되며, 커서 주변에서 발광·흩어진다.
  */
 export default function StarfieldBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -34,29 +35,34 @@ export default function StarfieldBackground() {
     let stars: Star[] = [];
     const mouse = { x: -9999, y: -9999, active: false };
 
-    const LINK = 120; // 성좌 연결 거리
-    const MOUSE_R = 180; // 마우스 영향 반경
-    const PUSH = 26; // 마우스 반발 세기(px)
+    // 전체 조류(global flow): 천천히 방향이 회전하며 화면 전체를 한 방향으로 흐르게 함
+    let flowAngle = Math.random() * Math.PI * 2;
+    const FLOW_SPEED = 0.28;   // 조류 속도 (별 개인 속도보다 훨씬 크게)
+    const FLOW_TURN = 0.00018; // 조류 방향 회전 속도 (매우 천천히)
+
+    const LINK = 130;
+    const MOUSE_R = 180;
+    const PUSH = 26;
 
     function initStars() {
       const count = Math.min(280, Math.floor((w * h) / 5200));
       stars = Array.from({ length: count }, () => {
         const x = Math.random() * w;
         const y = Math.random() * h;
-        // 최소 속도를 보장해 멈춰 있는 별 없이 역동적으로 흐르게 한다
+        // 개인 드리프트는 극히 작게 — 별마다 조금씩 다른 느낌만 준다
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 0.4 + 0.22;
+        const speed = Math.random() * 0.06 + 0.02;
         return {
           x,
           y,
           px: x,
           py: y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
+          dvx: Math.cos(angle) * speed,
+          dvy: Math.sin(angle) * speed,
           r: Math.random() * 1.5 + 0.4,
           baseA: Math.random() * 0.5 + 0.35,
           tw: Math.random() * Math.PI * 2,
-          twSpeed: Math.random() * 0.022 + 0.005,
+          twSpeed: Math.random() * 0.018 + 0.004,
         };
       });
     }
@@ -75,10 +81,15 @@ export default function StarfieldBackground() {
     function frame() {
       ctx!.clearRect(0, 0, w, h);
 
-      // 1) 기본 드리프트 + 래핑 + 반짝임, 그리고 마우스 반발 표시좌표 계산
+      // 조류 방향 천천히 회전
+      flowAngle += FLOW_TURN;
+      const flowX = Math.cos(flowAngle) * FLOW_SPEED;
+      const flowY = Math.sin(flowAngle) * FLOW_SPEED;
+
+      // 1) 이동: 조류 + 개인 드리프트
       for (const s of stars) {
-        s.x += s.vx;
-        s.y += s.vy;
+        s.x += flowX + s.dvx;
+        s.y += flowY + s.dvy;
         if (s.x < -20) s.x = w + 20;
         else if (s.x > w + 20) s.x = -20;
         if (s.y < -20) s.y = h + 20;
@@ -120,7 +131,7 @@ export default function StarfieldBackground() {
         }
       }
 
-      // 3) 커서에서 가까운 별로 이어지는 빛줄기
+      // 3) 커서 빛줄기
       if (mouse.active) {
         ctx!.lineWidth = 0.7;
         for (const s of stars) {
@@ -138,7 +149,7 @@ export default function StarfieldBackground() {
         }
       }
 
-      // 4) 별 본체 (반짝임 + 커서 근처 발광)
+      // 4) 별 본체
       ctx!.shadowColor = 'rgba(180,205,255,0.9)';
       for (const s of stars) {
         let a = s.baseA + Math.sin(s.tw) * 0.28;
@@ -150,8 +161,7 @@ export default function StarfieldBackground() {
             a += (1 - Math.sqrt(d2) / MOUSE_R) * 0.55;
           }
         }
-        if (a < 0) a = 0;
-        else if (a > 1) a = 1;
+        a = Math.max(0, Math.min(1, a));
         ctx!.beginPath();
         ctx!.arc(s.px, s.py, s.r, 0, Math.PI * 2);
         ctx!.fillStyle = `rgba(255,255,255,${a})`;
@@ -164,22 +174,14 @@ export default function StarfieldBackground() {
     }
 
     function onMove(e: MouseEvent) {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-      mouse.active = true;
+      mouse.x = e.clientX; mouse.y = e.clientY; mouse.active = true;
     }
     function onLeave() {
-      mouse.active = false;
-      mouse.x = -9999;
-      mouse.y = -9999;
+      mouse.active = false; mouse.x = -9999; mouse.y = -9999;
     }
     function onTouch(e: TouchEvent) {
       const t = e.touches[0];
-      if (t) {
-        mouse.x = t.clientX;
-        mouse.y = t.clientY;
-        mouse.active = true;
-      }
+      if (t) { mouse.x = t.clientX; mouse.y = t.clientY; mouse.active = true; }
     }
 
     resize();
