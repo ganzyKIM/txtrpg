@@ -64,6 +64,7 @@ export default function App() {
   const [stats, setStats] = useState<JourneyStats | null>(null);
   const [warping, setWarping] = useState(false);
   const [warpLabel, setWarpLabel] = useState<string | undefined>(undefined);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const warpStartRef = useRef(0);
   const memoryBusyRef = useRef(false);
 
@@ -336,24 +337,36 @@ ${store.game.fixedMemory}
       <div id="toolbar" className={game ? undefined : 'cosmic'}>
         {game ? (
           <>
-            <button className="menu-item" onClick={() => setShowMemory(true)}>
-              [기억] 기억 관리
+            {/* 데스크톱: 메뉴 버튼 나열 */}
+            <div id="toolbar-desktop-menu">
+              <button className="menu-item" onClick={() => setShowMemory(true)}>기억 관리</button>
+              <button className="menu-item" onClick={() => setShowSettings(true)}>모델 설정</button>
+              <button className="menu-item" onClick={handleExportJson}>파일 저장</button>
+              <button className="menu-item" onClick={handleExportTxt}>txt 내보내기</button>
+              <button className="menu-item" onClick={handleGoHome}>처음으로</button>
+            </div>
+            {/* 모바일: 햄버거 버튼 */}
+            <button
+              id="mobile-menu-btn"
+              className="menu-item"
+              onClick={() => setMobileMenuOpen((v) => !v)}
+              aria-label="메뉴"
+            >
+              ☰
             </button>
-            <button className="menu-item" onClick={() => setShowSettings(true)}>
-              [도구] 모델 설정
-            </button>
-            <button className="menu-item" onClick={handleExportJson}>
-              [백업] 파일 저장
-            </button>
-            <button className="menu-item" onClick={handleExportTxt}>
-              [백업] txt 내보내기
-            </button>
-            <button className="menu-item" onClick={handleGoHome}>
-              처음으로
-            </button>
-            <span id="file-status">
-              {store.dirty ? '저장 중…' : '저장됨'}
-            </span>
+            {mobileMenuOpen && (
+              <>
+                <div id="mobile-menu-backdrop" onClick={() => setMobileMenuOpen(false)} />
+                <div id="mobile-menu-dropdown">
+                  <button className="menu-item" onClick={() => { setShowMemory(true); setMobileMenuOpen(false); }}>기억 관리</button>
+                  <button className="menu-item" onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}>모델 설정</button>
+                  <button className="menu-item" onClick={() => { handleExportJson(); setMobileMenuOpen(false); }}>파일 저장</button>
+                  <button className="menu-item" onClick={() => { handleExportTxt(); setMobileMenuOpen(false); }}>txt 내보내기</button>
+                  <button className="menu-item" onClick={() => { handleGoHome(); setMobileMenuOpen(false); }}>처음으로</button>
+                </div>
+              </>
+            )}
+            <span id="file-status">{store.dirty ? '저장 중…' : '저장됨'}</span>
           </>
         ) : (
           <button className="menu-item" onClick={() => setShowSettings(true)}>
