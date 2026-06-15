@@ -21,20 +21,23 @@ export default function SettingsModal({ open, settings, onChange, onClose }: Pro
     try {
       const lists = await listModels(apiKey);
       setModels(lists);
+      const next = { ...settings };
       // 선택된 모델이 없으면 합리적인 기본값 자동 선택
-      if (!settings.textModel && lists.textModels.length > 0) {
+      if (!next.textModel && lists.textModels.length > 0) {
         const preferred =
           lists.textModels.find((m) => m.id.includes('flash') && !m.id.includes('lite')) ??
           lists.textModels[0];
-        onChange({ ...settings, textModel: preferred.id });
+        next.textModel = preferred.id;
+        next.textModelTokenLimit = preferred.inputTokenLimit;
       }
-      if (!settings.imageModel && lists.imageModels.length > 0) {
+      if (!next.imageModel && lists.imageModels.length > 0) {
         const preferred =
           lists.imageModels.find(
             (m) => m.id.includes('imagen-3') || m.id.includes('flash-image'),
           ) ?? lists.imageModels[0];
-        onChange({ ...settings, imageModel: preferred.id });
+        next.imageModel = preferred.id;
       }
+      onChange(next);
     } catch (err) {
       setError((err as Error).message);
       setModels(null);
@@ -68,7 +71,14 @@ export default function SettingsModal({ open, settings, onChange, onClose }: Pro
         <label>AI 모델 (텍스트 생성용):</label>
         <select
           value={settings.textModel}
-          onChange={(e) => onChange({ ...settings, textModel: e.target.value })}
+          onChange={(e) => {
+            const chosen = models?.textModels.find((m) => m.id === e.target.value);
+            onChange({
+              ...settings,
+              textModel: e.target.value,
+              textModelTokenLimit: chosen?.inputTokenLimit ?? settings.textModelTokenLimit,
+            });
+          }}
         >
           {settings.textModel && !models && (
             <option value={settings.textModel}>{settings.textModel}</option>

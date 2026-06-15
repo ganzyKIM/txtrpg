@@ -25,11 +25,11 @@ const SETTINGS_KEY = 'txtrpg.settings';
 function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return { apiKey: '', textModel: '', imageModel: '', ...JSON.parse(raw) };
+    if (raw) return { apiKey: '', textModel: '', imageModel: '', textModelTokenLimit: 128_000, ...JSON.parse(raw) };
   } catch {
     /* 손상된 설정은 무시 */
   }
-  return { apiKey: '', textModel: '', imageModel: '' };
+  return { apiKey: '', textModel: '', imageModel: '', textModelTokenLimit: 128_000 };
 }
 
 const MODE_INSTRUCTIONS: Record<ReplyMode, string> = {
@@ -48,6 +48,12 @@ export default function App() {
   const [showMemory, setShowMemory] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const memoryBusyRef = useRef(false);
+
+  // API 키가 없으면 앱 시작 시 설정창 자동 표시
+  useEffect(() => {
+    if (!settings.apiKey) setShowSettings(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -103,7 +109,7 @@ export default function App() {
     }
     setBusy('이야기를 잣는 중...');
     try {
-      const aiText = await generateText(settings.apiKey, settings.textModel, messages, {
+      const { text: aiText } = await generateText(settings.apiKey, settings.textModel, messages, {
         system,
       });
       const aiTurn = newTurn('ai', aiText);
@@ -162,7 +168,7 @@ ${store.game.fixedMemory}
 [선택된 문장]
 "${selectedText}"`;
 
-      const imagePrompt = await generateText(
+      const { text: imagePrompt } = await generateText(
         settings.apiKey,
         settings.textModel,
         [{ role: 'user', text: promptForImage }],

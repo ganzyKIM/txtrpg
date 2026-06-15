@@ -12,6 +12,7 @@ const SAFETY_SETTINGS = [
 export interface ModelInfo {
   id: string;
   displayName: string;
+  inputTokenLimit: number;
 }
 
 export interface ModelLists {
@@ -29,14 +30,24 @@ export interface GenerateOptions {
   temperature?: number;
 }
 
+export interface GenerateResult {
+  text: string;
+  promptTokenCount: number;
+}
+
 interface RawModel {
   name: string;
   displayName: string;
   supportedGenerationMethods?: string[];
+  inputTokenLimit?: number;
 }
 
 function toInfo(m: RawModel): ModelInfo {
-  return { id: m.name.replace('models/', ''), displayName: m.displayName };
+  return {
+    id: m.name.replace('models/', ''),
+    displayName: m.displayName,
+    inputTokenLimit: m.inputTokenLimit ?? 128_000,
+  };
 }
 
 export async function listModels(apiKey: string): Promise<ModelLists> {
@@ -72,7 +83,7 @@ export async function generateText(
   model: string,
   messages: ChatMessage[],
   options: GenerateOptions = {},
-): Promise<string> {
+): Promise<GenerateResult> {
   const body: Record<string, unknown> = {
     contents: messages.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
     safetySettings: SAFETY_SETTINGS,
@@ -97,7 +108,8 @@ export async function generateText(
     ?.map((p: { text?: string }) => p.text ?? '')
     .join('');
   if (!text) throw new Error('응답에서 텍스트를 추출하지 못했습니다.');
-  return text;
+  const promptTokenCount: number = data.usageMetadata?.promptTokenCount ?? 0;
+  return { text, promptTokenCount };
 }
 
 /** 이미지 생성. base64 PNG 데이터(data: 접두사 제외)를 반환 */

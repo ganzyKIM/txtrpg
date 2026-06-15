@@ -25,6 +25,7 @@ export interface Settings {
   apiKey: string;
   textModel: string;
   imageModel: string;
+  textModelTokenLimit: number;
 }
 
 export type ReplyMode = 'textOnly' | 'choice';

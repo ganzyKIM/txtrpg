@@ -68,20 +68,27 @@ export interface MemoryUpdate {
  * 백그라운드 메모리 유지보수.
  * 1) 윈도우 초과분을 롤링 요약으로 접는다.
  * 2) 요약이 너무 길면 장기 설정을 고정 메모리로 승격하고 요약을 재압축한다.
+ * forceRoll=true 이면 창 크기 조건에 관계없이 즉시 요약을 접는다 (컨텍스트 80% 초과 시).
  * 변경이 없으면 null 반환.
  */
 export async function maintainMemory(
   state: GameState,
   apiKey: string,
   model: string,
+  forceRoll = false,
 ): Promise<MemoryUpdate | null> {
   const update: MemoryUpdate = {};
   let changed = false;
   let summaryNow = state.rollingSummary;
 
   const windowTurns = recentTurns(state);
-  if (windowTurns.length > RECENT_WINDOW_MAX) {
-    const fold = windowTurns.slice(0, FOLD_BATCH).filter((t) => t.role !== 'system');
+  if (forceRoll || windowTurns.length > RECENT_WINDOW_MAX) {
+    const batchSize = forceRoll
+      ? Math.max(FOLD_BATCH, Math.floor(windowTurns.length / 2))
+      : FOLD_BATCH;
+    const fold = windowTurns.slice(0, batchSize).filter((t) => t.role !== 'system');
+    if (fold.length === 0) return null;
+
     const foldText = fold
       .map((t) => (t.role === 'user' ? `[플레이어] ${t.text}` : t.text))
       .join('\n\n');
@@ -104,14 +111,14 @@ ${foldText}`;
       await generateText(apiKey, model, [{ role: 'user', text: foldPrompt }], {
         temperature: 0.2,
       })
-    ).trim();
+    ).text.trim();
     update.rollingSummary = summaryNow;
-    update.summarizedTurnCount = state.summarizedTurnCount + FOLD_BATCH;
+    update.summarizedTurnCount = state.summarizedTurnCount + fold.length;
     changed = true;
   }
 
   if (summaryNow.length > SUMMARY_PROMOTE_THRESHOLD) {
-    // 1단계: 장기 보존 가치가 있는 설정을 고정 메모리로 승격 (기존 extractionPrompt 이식)
+    // 1단계: 장기 보존 가치가 있는 설정을 고정 메모리로 승격
     const extractPrompt = `당신은 텍스트 RPG의 메모리 관리자입니다.
 기존 메모리를 갈아엎지 말고, 아래 [줄거리 요약]에서 '기존 메모리에 추가해야 할 아주 중요한 신규 정보'만 요약하세요.
 
@@ -130,7 +137,7 @@ ${summaryNow}`;
       await generateText(apiKey, model, [{ role: 'user', text: extractPrompt }], {
         temperature: 0.1,
       })
-    ).trim();
+    ).text.trim();
     if (lore && !lore.includes('변경사항 없음')) {
       update.fixedMemory = state.fixedMemory.trim()
         ? `${state.fixedMemory.trim()}\n\n${lore}`
@@ -146,7 +153,7 @@ ${summaryNow}`;
       await generateText(apiKey, model, [{ role: 'user', text: compressPrompt }], {
         temperature: 0.2,
       })
-    ).trim();
+    ).text.trim();
     changed = true;
   }
 

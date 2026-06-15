@@ -18,11 +18,21 @@ export default function ChatLog({ turns, busy, onGenerateImage }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [imgBtn, setImgBtn] = useState<ImgBtnState | null>(null);
 
-  const lastTurnId = turns.length > 0 ? turns[turns.length - 1].id : null;
+  const lastTurnId = turns.at(-1)?.id ?? null;
+  const lastTurnRole = turns.at(-1)?.role ?? null;
+
   useEffect(() => {
     const box = boxRef.current;
-    if (box) box.scrollTop = box.scrollHeight;
-  }, [lastTurnId]);
+    if (!box || !lastTurnId) return;
+    if (lastTurnRole === 'ai') {
+      // 새 AI 응답의 첫 줄이 chatBox 상단에 오도록 스크롤
+      const el = box.querySelector(`[data-turn-id="${lastTurnId}"]`) as HTMLElement | null;
+      if (el) box.scrollTop = el.offsetTop;
+    } else {
+      // 유저 입력 전송 후에는 바닥으로 내려 로딩 상태가 보이도록
+      box.scrollTop = box.scrollHeight;
+    }
+  }, [lastTurnId, lastTurnRole]);
 
   function handleMouseUp() {
     window.setTimeout(() => {
