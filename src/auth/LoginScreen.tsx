@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from './AuthContext';
+import StarfieldBackground from '../components/StarfieldBackground';
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth();
@@ -16,9 +17,12 @@ export default function LoginScreen() {
 
   return (
     <div id="login-screen">
+      <StarfieldBackground />
       <div id="login-card">
-        <h1 className="login-title">텍스트 RPG</h1>
-        <p className="login-subtitle">AI와 함께 나만의 이야기를 만들어보세요</p>
+        <h1 className="login-title">text RPG</h1>
+        <p className="login-subtitle">
+          당신의 상상으로 펼쳐나가는 이야기의 우주
+        </p>
         <button
           className="login-google-btn"
           onClick={() => void handleLogin()}
@@ -30,10 +34,10 @@ export default function LoginScreen() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          {busy ? '연결 중...' : 'Google 계정으로 시작하기'}
+          {busy ? '우주의 문을 여는 중...' : 'Google 계정으로 시작하기'}
         </button>
         <p className="login-notice">
-          로그인하면 진행 상황이 계정에 저장됩니다
+          로그인하면 당신의 모험이 계정에 안전하게 저장됩니다
         </p>
       </div>
     </div>

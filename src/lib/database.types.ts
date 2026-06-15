@@ -75,6 +75,36 @@ export interface Database {
         };
         Relationships: [];
       };
+      credit_ledger: {
+        Row: {
+          id: number;
+          user_id: string;
+          delta: number;
+          balance_after: number;
+          type: string;
+          meta: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          user_id: string;
+          delta: number;
+          balance_after: number;
+          type: string;
+          meta?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          user_id?: string;
+          delta?: number;
+          balance_after?: number;
+          type?: string;
+          meta?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

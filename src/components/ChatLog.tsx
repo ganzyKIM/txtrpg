@@ -12,9 +12,10 @@ interface Props {
   turns: Turn[];
   busy: boolean;
   onGenerateImage: (turnId: string, selectedText: string) => void;
+  onToggleExclude: (turnId: string) => void;
 }
 
-export default function ChatLog({ turns, busy, onGenerateImage }: Props) {
+export default function ChatLog({ turns, busy, onGenerateImage, onToggleExclude }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [imgBtn, setImgBtn] = useState<ImgBtnState | null>(null);
 
@@ -77,11 +78,21 @@ export default function ChatLog({ turns, busy, onGenerateImage }: Props) {
         <div
           key={turn.id}
           className={
-            turn.role === 'user' ? 'user-msg' : turn.role === 'ai' ? 'ai-msg' : 'system-msg'
+            (turn.role === 'user' ? 'user-msg' : turn.role === 'ai' ? 'ai-msg' : 'system-msg') +
+            (turn.excluded ? ' turn-excluded' : '')
           }
           data-turn-id={turn.id}
           data-turn-role={turn.role}
         >
+          {turn.role !== 'system' && (
+            <button
+              className="turn-exclude-toggle"
+              title={turn.excluded ? '저장에 다시 포함' : '이 턴을 저장에서 제외'}
+              onClick={() => onToggleExclude(turn.id)}
+            >
+              {turn.excluded ? '↩ 저장에 포함' : '✕ 저장 제외'}
+            </button>
+          )}
           {turn.text}
           {turn.images?.map((img, i) => (
             <img

@@ -6,6 +6,8 @@ export interface Turn {
   text: string;
   /** 이 턴에서 생성된 삽화 (base64 PNG, data: 접두사 제외) */
   images?: string[];
+  /** true면 저장(DB/파일)과 AI 문맥에서 제외. 화면에는 흐리게 표시 */
+  excluded?: boolean;
 }
 
 export interface GameState {
@@ -32,6 +34,28 @@ export type ReplyMode = 'textOnly' | 'choice';
 
 export function newTurn(role: TurnRole, text: string, images?: string[]): Turn {
   return { id: crypto.randomUUID(), role, text, images };
+}
+
+/**
+ * 저장 직전 호출: excluded 턴을 제거한 게임 상태를 반환한다.
+ * summarizedTurnCount(요약 경계 인덱스)도 경계 앞에서 제거된 만큼 보정한다.
+ * 제외 턴이 없으면 원본을 그대로 돌려준다.
+ */
+export function stripExcludedTurns(game: GameState): GameState {
+  if (!game.turns.some((t) => t.excluded)) return game;
+  let removedBeforeBoundary = 0;
+  const turns = game.turns.filter((t, i) => {
+    if (t.excluded) {
+      if (i < game.summarizedTurnCount) removedBeforeBoundary += 1;
+      return false;
+    }
+    return true;
+  });
+  return {
+    ...game,
+    turns,
+    summarizedTurnCount: game.summarizedTurnCount - removedBeforeBoundary,
+  };
 }
 
 export function emptyGame(title: string, fixedMemory = ''): GameState {

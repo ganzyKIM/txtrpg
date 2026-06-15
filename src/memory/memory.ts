@@ -39,7 +39,7 @@ export function buildSystemInstruction(state: GameState): string | undefined {
 export function buildMessages(state: GameState, pendingUserText: string): ChatMessage[] {
   const msgs: ChatMessage[] = [];
   for (const t of recentTurns(state)) {
-    if (t.role === 'system' || !t.text.trim()) continue;
+    if (t.role === 'system' || t.excluded || !t.text.trim()) continue;
     msgs.push({ role: t.role === 'user' ? 'user' : 'model', text: t.text });
   }
   msgs.push({ role: 'user', text: pendingUserText });
@@ -94,11 +94,14 @@ export async function maintainMemory(
     const fold = windowTurns.slice(0, batchSize).filter((t) => t.role !== 'system');
     if (fold.length === 0) return null;
 
-    const foldText = fold
-      .map((t) => (t.role === 'user' ? `[플레이어] ${t.text}` : t.text))
-      .join('\n\n');
+    // 저장 제외(excluded) 턴은 요약에도 반영하지 않는다 (창은 그대로 전진).
+    const foldVisible = fold.filter((t) => !t.excluded);
+    if (foldVisible.length > 0) {
+      const foldText = foldVisible
+        .map((t) => (t.role === 'user' ? `[플레이어] ${t.text}` : t.text))
+        .join('\n\n');
 
-    const foldPrompt = `당신은 텍스트 RPG의 기록 보관인입니다.
+      const foldPrompt = `당신은 텍스트 RPG의 기록 보관인입니다.
 [기존 줄거리 요약]에 [새로 밀려난 기록]의 내용을 반영하여, 갱신된 줄거리 요약을 작성하세요.
 
 [규칙]
@@ -112,12 +115,13 @@ ${state.rollingSummary.trim() || '(아직 없음)'}
 [새로 밀려난 기록]
 ${foldText}`;
 
-    summaryNow = (
-      await proxyGenerateText('standard', [{ role: 'user', text: foldPrompt }], {
-        temperature: 0.2,
-      })
-    ).text.trim();
-    update.rollingSummary = summaryNow;
+      summaryNow = (
+        await proxyGenerateText('standard', [{ role: 'user', text: foldPrompt }], {
+          temperature: 0.2,
+        })
+      ).text.trim();
+      update.rollingSummary = summaryNow;
+    }
     update.summarizedTurnCount = state.summarizedTurnCount + fold.length;
     changed = true;
   }

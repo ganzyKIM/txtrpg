@@ -13,10 +13,10 @@ export default function SettingsModal({ open, settings, onChange, onClose }: Pro
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" style={{ width: 460 }} onClick={(e) => e.stopPropagation()}>
+      <div className="modal" style={{ width: 480 }} onClick={(e) => e.stopPropagation()}>
         <h3>모델 설정</h3>
 
-        <label>텍스트 모델 (이야기 생성)</label>
+        <p className="settings-section-label">텍스트 모델 — 이야기 생성</p>
         <div className="tier-list">
           {TEXT_TIERS.map((t) => (
             <label
@@ -37,8 +37,9 @@ export default function SettingsModal({ open, settings, onChange, onClose }: Pro
           ))}
         </div>
 
-        <label style={{ marginTop: 16 }}>이미지 모델 (삽화 생성)</label>
-        <div className="tier-option selected" style={{ cursor: 'default' }}>
+        <p className="settings-section-label" style={{ marginTop: 20 }}>이미지 모델 — 삽화 생성</p>
+        <div className="image-model-box">
+          <span className="image-model-icon">🖼️</span>
           <span className="tier-body">
             <span className="tier-label">{IMAGE_MODEL_INFO.label}</span>
             <span className="tier-price">{IMAGE_MODEL_INFO.priceNote}</span>
@@ -46,7 +47,7 @@ export default function SettingsModal({ open, settings, onChange, onClose }: Pro
         </div>
 
         <p className="settings-note">
-          크레딧은 실제 사용한 토큰량만큼 차감됩니다. 고품질 모델일수록 더 많이 차감됩니다.
+          크레딧은 실제 사용한 토큰량에 따라 차감됩니다. 고품질 모델은 더 풍부한 표현을 생성하지만 약 3배의 크레딧이 소모됩니다. 이미지는 생성 시에만 차감됩니다.
         </p>
 
         <div className="modal-buttons">

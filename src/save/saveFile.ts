@@ -1,5 +1,5 @@
 import type { GameState, Settings, TextTier, Turn } from '../types';
-import { newTurn } from '../types';
+import { newTurn, stripExcludedTurns } from '../types';
 
 const SAVE_VERSION = 1 as const;
 
@@ -21,10 +21,11 @@ export interface ParsedSave {
 }
 
 export function serializeSave(
-  game: GameState,
+  rawGame: GameState,
   settings: Settings,
   includeImages: boolean,
 ): string {
+  const game = stripExcludedTurns(rawGame);
   const data: SaveFileData = {
     version: SAVE_VERSION,
     savedAt: new Date().toISOString(),
@@ -104,7 +105,7 @@ export function exportPlainTxt(game: GameState): string {
   const recordParts: string[] = [];
   if (game.archive.trim()) recordParts.push(game.archive.trim());
   for (const t of game.turns) {
-    if (t.role === 'system') continue;
+    if (t.role === 'system' || t.excluded) continue;
     recordParts.push(t.text);
   }
   return `[고정 메모리]\n${game.fixedMemory.trim()}\n\n\n[진행 기록]\n${recordParts.join('\n\n')}`;

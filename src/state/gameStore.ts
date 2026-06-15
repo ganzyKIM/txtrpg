@@ -28,6 +28,7 @@ export type StoreAction =
   // API 실패 시 직전 스냅샷으로 복원 (redo 스택에 넣지 않음)
   | { type: 'rollbackExchange' }
   | { type: 'attachImage'; turnId: string; image: string }
+  | { type: 'toggleExclude'; turnId: string }
   | { type: 'memoryUpdate'; update: MemoryUpdate }
   | { type: 'editMemory'; fixedMemory: string; rollingSummary: string }
   | { type: 'undo' }
@@ -74,6 +75,19 @@ export function storeReducer(state: StoreState, action: StoreAction): StoreState
       if (!game) return state;
       const turns = game.turns.map((t) =>
         t.id === action.turnId ? { ...t, images: [...(t.images ?? []), action.image] } : t,
+      );
+      return {
+        game: { ...game, turns },
+        past: pushPast(state.past, game),
+        future: [],
+        dirty: true,
+      };
+    }
+
+    case 'toggleExclude': {
+      if (!game) return state;
+      const turns = game.turns.map((t) =>
+        t.id === action.turnId ? { ...t, excluded: t.excluded ? undefined : true } : t,
       );
       return {
         game: { ...game, turns },

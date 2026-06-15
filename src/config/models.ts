@@ -27,8 +27,8 @@ export const TEXT_TIERS: TextTierInfo[] = [
 ];
 
 export const IMAGE_MODEL_INFO = {
-  label: 'Nano Banana 2 (Gemini 3.1 Flash Image)',
-  priceNote: '1장(1024px) 약 188 크레딧',
+  label: 'Gemini 2.5 Flash Image',
+  priceNote: '1장 약 188 크레딧 · 생성 시간 30~60초',
 };
 
 export const DEFAULT_TEXT_TIER: TextTier = 'standard';
