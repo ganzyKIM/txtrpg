@@ -441,18 +441,18 @@ select.mode-select:focus { border-color: #1a73e8; }
   transform: none; cursor: default;
 }
 
-/* Start card default button fallback */
-.start-card button:not(.btn-primary):not(.ghost-btn):not(.save-open):not(.save-delete) {
+/* Start card default button fallback — excludes chip buttons */
+.start-card button:not(.btn-primary):not(.ghost-btn):not(.save-open):not(.save-delete):not(.choice-chip) {
   background: #1a73e8; color: #fff; border: none;
   padding: 11px 20px; border-radius: 9px; cursor: pointer;
   font-family: inherit; font-size: 14px; font-weight: 600;
   box-shadow: 0 2px 8px rgba(26,115,232,0.25);
   transition: background 0.13s, transform 0.1s;
 }
-.start-card button:not(.btn-primary):not(.ghost-btn):not(.save-open):not(.save-delete):hover {
+.start-card button:not(.btn-primary):not(.ghost-btn):not(.save-open):not(.save-delete):not(.choice-chip):hover {
   background: #1557b0; transform: translateY(-1px);
 }
-.start-card button:disabled { background: #c5d6f0 !important; transform: none !important; cursor: default !important; box-shadow: none !important; }
+.start-card button:not(.choice-chip):disabled { background: #c5d6f0 !important; transform: none !important; cursor: default !important; box-shadow: none !important; }
 
 /* Save List */
 .save-list { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -626,12 +626,60 @@ select.mode-select:focus { border-color: #1a73e8; }
   font-size: 12px; color: #8b98bd; font-style: italic;
 }
 @media (max-width: 640px) {
-  #editor-container {
-    padding: 20px 16px;
-    margin: 12px 12px 60px;
-    border-radius: 10px;
+  html, body {
+    height: 100%;
+    overflow: hidden;
   }
-  #chatBox { height: calc(100vh - 260px); }
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Auth loading */
+  #auth-loading { flex: 1; min-height: 0; }
+
+  /* Login screen: fills viewport, no outer scroll */
+  #login-screen {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Start screen: internal scroll only */
+  #start-screen {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    max-width: 100%;
+    margin: 0;
+    padding: 16px 16px 48px;
+    position: relative;
+  }
+
+  /* Game screen: flex column fills remaining height */
+  #editor-container {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    padding: 12px 12px 0;
+  }
+  #chatBox {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+  }
+  #input-area {
+    flex-shrink: 0;
+    padding-bottom: 8px;
+  }
 }
 
 @media (max-width: 520px) {
@@ -695,6 +743,7 @@ select.mode-select:focus { border-color: #1a73e8; }
   color: #aebbe2; margin-bottom: 8px; letter-spacing: 0.01em;
 }
 .choice-group-inline { display: inline-block; width: 100%; }
+.choice-chips-wrap { width: 100%; }
 .choice-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .choice-chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -718,6 +767,22 @@ select.mode-select:focus { border-color: #1a73e8; }
 }
 .choice-chip.selected .chip-icon { transform: scale(1.15); }
 .choice-chip:active { transform: scale(0.95); }
+
+.custom-chip-input {
+  width: 100%; margin-top: 10px;
+  padding: 10px 13px;
+  background: rgba(8,13,32,0.6); color: #eaf0ff;
+  border: 1.5px solid rgba(150,180,255,0.3); border-radius: 9px;
+  font-family: inherit; font-size: 13px;
+  resize: vertical; line-height: 1.65;
+  transition: border-color 0.13s, box-shadow 0.13s, background 0.13s;
+}
+.custom-chip-input:focus {
+  outline: none; border-color: #6d9bff;
+  background: rgba(8,13,32,0.85);
+  box-shadow: 0 0 0 3px rgba(109,155,255,0.18);
+}
+.custom-chip-input::placeholder { color: #6f7da6; }
 
 #start-screen .start-card input[type="text"],
 #start-screen .start-card textarea {
