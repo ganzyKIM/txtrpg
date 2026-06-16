@@ -340,10 +340,6 @@ export default function StartScreen({
 
       <div className="start-card">
         <h2>새 모험 시작</h2>
-        <p className="setup-hint">
-          칩을 골라보세요. 고를 때마다 우주에 그 색이 번져 나가요 🌌
-        </p>
-
         <div className="choice-group">
           <span className="choice-label">🌍 세계관</span>
           {renderChips(GENRES, genre, pick('genre', setGenre), genreCustom, setGenreCustom)}
