@@ -5,6 +5,8 @@ interface Props {
   active: boolean;
   /** 전환 중 보여줄 목적지 이름(모험 제목 등) */
   label?: string;
+  /** 선택한 세계의 색 톤 [r,g,b] — 웜홀 빛줄기와 중심 발광에 반영 */
+  tint?: [number, number, number];
 }
 
 interface Streak {
@@ -19,10 +21,12 @@ interface Streak {
  * 웜홀(하이퍼스페이스) 화면 전환.
  * 중심에서 별빛이 가속하며 바깥으로 뻗어나가, 마치 터널을 통과하는 듯한 연출.
  */
-export default function WormholeTransition({ active, label }: Props) {
+export default function WormholeTransition({ active, label, tint }: Props) {
   const [show, setShow] = useState(false);
   const [fading, setFading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const tintRef = useRef<[number, number, number] | undefined>(tint);
+  tintRef.current = tint;
 
   // active 토글에 따라 마운트/페이드아웃 수명 관리
   useEffect(() => {
@@ -102,9 +106,14 @@ export default function WormholeTransition({ active, label }: Props) {
 
         const alpha = Math.min(1, 0.15 + r / maxR);
         const width = Math.min(2.6, 0.5 + r / maxR * 2.4);
-        ctx!.strokeStyle = s.bluish
-          ? `rgba(150,195,255,${alpha})`
-          : `rgba(255,255,255,${alpha})`;
+        const t = tintRef.current;
+        if (s.bluish) {
+          ctx!.strokeStyle = t
+            ? `rgba(${t[0]},${t[1]},${t[2]},${alpha})`
+            : `rgba(150,195,255,${alpha})`;
+        } else {
+          ctx!.strokeStyle = `rgba(255,255,255,${alpha})`;
+        }
         ctx!.lineWidth = width;
         ctx!.beginPath();
         ctx!.moveTo(cx + s.px, cy + s.py);
@@ -115,9 +124,17 @@ export default function WormholeTransition({ active, label }: Props) {
       // 중심 발광
       const glowR = 70 + Math.sin(elapsed / 200) * 14;
       const g = ctx!.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-      g.addColorStop(0, 'rgba(190,215,255,0.55)');
-      g.addColorStop(0.5, 'rgba(110,150,255,0.18)');
-      g.addColorStop(1, 'rgba(110,150,255,0)');
+      const t = tintRef.current;
+      if (t) {
+        const [tr, tg, tb] = t;
+        g.addColorStop(0, `rgba(${Math.min(255, tr + 60)},${Math.min(255, tg + 60)},${Math.min(255, tb + 60)},0.6)`);
+        g.addColorStop(0.5, `rgba(${tr},${tg},${tb},0.2)`);
+        g.addColorStop(1, `rgba(${tr},${tg},${tb},0)`);
+      } else {
+        g.addColorStop(0, 'rgba(190,215,255,0.55)');
+        g.addColorStop(0.5, 'rgba(110,150,255,0.18)');
+        g.addColorStop(1, 'rgba(110,150,255,0)');
+      }
       ctx!.fillStyle = g;
       ctx!.beginPath();
       ctx!.arc(cx, cy, glowR, 0, Math.PI * 2);

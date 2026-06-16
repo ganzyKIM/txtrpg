@@ -3,7 +3,6 @@ import { useEffect, useRef } from 'react';
 interface Star {
   x: number;
   y: number;
-  /** 별 고유의 미세한 드리프트 방향/속도 */
   dvx: number;
   dvy: number;
   px: number;
@@ -14,13 +13,76 @@ interface Star {
   twSpeed: number;
 }
 
+export type RGB = [number, number, number];
+
+/** 선택에 따라 배경 우주에 번지는 색 물감 한 방울 */
+export interface Tint {
+  key: string;
+  color: RGB;
+  /** 번짐 중심 (0~1 비율 좌표) */
+  fx: number;
+  fy: number;
+}
+
+interface Blob {
+  color: RGB;
+  target: RGB;
+  fx: number;
+  fy: number;
+  t0: number;
+  alive: boolean;
+  deadAt: number;
+}
+
+const SPREAD_MS = 3200; // 물감이 최대로 퍼지는 데 걸리는 시간 (천천히)
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
 /**
  * 마우스와 상호작용하는 우주 파티클 배경.
- * 별들이 화면 전체를 가로지르는 큰 조류(global flow)를 타며 흐르고,
- * 가까운 별끼리 성좌처럼 연결되며, 커서 주변에서 발광·흩어진다.
+ * 별들이 화면 전체를 가로지르는 큰 조류를 타며 흐르고,
+ * `tints`가 주어지면 그 색이 물 위에 떨어진 물감처럼 일부 지점에서 천천히 번져 조합된다.
  */
-export default function StarfieldBackground() {
+export default function StarfieldBackground({ tints }: { tints?: Tint[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const tintsRef = useRef<Tint[]>([]);
+  const blobsRef = useRef<Map<string, Blob>>(new Map());
+
+  // 렌더마다 최신 tints를 ref로 동기화 (애니메이션 루프가 읽음)
+  tintsRef.current = tints ?? [];
+
+  useEffect(() => {
+    const now = performance.now();
+    const blobs = blobsRef.current;
+    const incoming = new Map((tints ?? []).map((t) => [t.key, t]));
+    // 추가/갱신
+    for (const t of tints ?? []) {
+      const existing = blobs.get(t.key);
+      if (existing) {
+        existing.target = t.color;
+        existing.fx = t.fx;
+        existing.fy = t.fy;
+        existing.alive = true;
+      } else {
+        blobs.set(t.key, {
+          color: t.color,
+          target: t.color,
+          fx: t.fx,
+          fy: t.fy,
+          t0: now,
+          alive: true,
+          deadAt: 0,
+        });
+      }
+    }
+    // 제거된 키는 페이드아웃 표시
+    for (const [key, b] of blobs) {
+      if (!incoming.has(key) && b.alive) {
+        b.alive = false;
+        b.deadAt = now;
+      }
+    }
+  }, [tints]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,10 +97,9 @@ export default function StarfieldBackground() {
     let stars: Star[] = [];
     const mouse = { x: -9999, y: -9999, active: false };
 
-    // 전체 조류(global flow): 천천히 방향이 회전하며 화면 전체를 한 방향으로 흐르게 함
     let flowAngle = Math.random() * Math.PI * 2;
-    const FLOW_SPEED = 0.28;   // 조류 속도 (별 개인 속도보다 훨씬 크게)
-    const FLOW_TURN = 0.00018; // 조류 방향 회전 속도 (매우 천천히)
+    const FLOW_SPEED = 0.28;
+    const FLOW_TURN = 0.00018;
 
     const LINK = 130;
     const MOUSE_R = 180;
@@ -49,14 +110,10 @@ export default function StarfieldBackground() {
       stars = Array.from({ length: count }, () => {
         const x = Math.random() * w;
         const y = Math.random() * h;
-        // 개인 드리프트는 극히 작게 — 별마다 조금씩 다른 느낌만 준다
         const angle = Math.random() * Math.PI * 2;
         const speed = Math.random() * 0.06 + 0.02;
         return {
-          x,
-          y,
-          px: x,
-          py: y,
+          x, y, px: x, py: y,
           dvx: Math.cos(angle) * speed,
           dvy: Math.sin(angle) * speed,
           r: Math.random() * 1.5 + 0.4,
@@ -78,15 +135,55 @@ export default function StarfieldBackground() {
       initStars();
     }
 
+    function drawTints(now: number) {
+      const blobs = blobsRef.current;
+      if (blobs.size === 0) return;
+      const maxR = Math.max(w, h) * 0.72;
+      ctx!.globalCompositeOperation = 'lighter';
+      for (const [key, b] of blobs) {
+        // 타깃 색으로 부드럽게 보간
+        b.color = [
+          lerp(b.color[0], b.target[0], 0.04),
+          lerp(b.color[1], b.target[1], 0.04),
+          lerp(b.color[2], b.target[2], 0.04),
+        ];
+        const age = now - b.t0;
+        const grow = easeOut(Math.min(1, age / SPREAD_MS));
+        const r = Math.max(1, maxR * grow);
+        // 페이드 인(0.6s) · 페이드 아웃
+        let alpha = Math.min(1, age / 600) * 0.34;
+        if (!b.alive) {
+          const dead = (now - b.deadAt) / 900;
+          alpha *= Math.max(0, 1 - dead);
+          if (dead >= 1) {
+            blobs.delete(key);
+            continue;
+          }
+        }
+        const cx = b.fx * w;
+        const cy = b.fy * h;
+        const [cr, cg, cb] = b.color.map((v) => Math.round(v));
+        const grad = ctx!.createRadialGradient(cx, cy, 0, cx, cy, r);
+        grad.addColorStop(0, `rgba(${cr},${cg},${cb},${alpha})`);
+        grad.addColorStop(0.45, `rgba(${cr},${cg},${cb},${alpha * 0.45})`);
+        grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+        ctx!.fillStyle = grad;
+        ctx!.fillRect(0, 0, w, h);
+      }
+      ctx!.globalCompositeOperation = 'source-over';
+    }
+
     function frame() {
+      const now = performance.now();
       ctx!.clearRect(0, 0, w, h);
 
-      // 조류 방향 천천히 회전
+      // 0) 색 물감 번짐 (별 뒤 배경)
+      drawTints(now);
+
       flowAngle += FLOW_TURN;
       const flowX = Math.cos(flowAngle) * FLOW_SPEED;
       const flowY = Math.sin(flowAngle) * FLOW_SPEED;
 
-      // 1) 이동: 조류 + 개인 드리프트
       for (const s of stars) {
         s.x += flowX + s.dvx;
         s.y += flowY + s.dvy;
@@ -111,7 +208,6 @@ export default function StarfieldBackground() {
         }
       }
 
-      // 2) 성좌 연결선
       ctx!.lineWidth = 0.6;
       for (let i = 0; i < stars.length; i++) {
         const a = stars[i];
@@ -131,7 +227,6 @@ export default function StarfieldBackground() {
         }
       }
 
-      // 3) 커서 빛줄기
       if (mouse.active) {
         ctx!.lineWidth = 0.7;
         for (const s of stars) {
@@ -149,7 +244,6 @@ export default function StarfieldBackground() {
         }
       }
 
-      // 4) 별 본체
       ctx!.shadowColor = 'rgba(180,205,255,0.9)';
       for (const s of stars) {
         let a = s.baseA + Math.sin(s.tw) * 0.28;

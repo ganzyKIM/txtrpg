@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { JourneyStats, SaveMeta } from '../save/cloudSave';
 import { TEXT_TIERS } from '../config/models';
-import StarfieldBackground from './StarfieldBackground';
+import StarfieldBackground, { type RGB, type Tint } from './StarfieldBackground';
 
 interface Props {
   busy: boolean;
@@ -11,7 +11,7 @@ interface Props {
   onContinue: (id: string) => void;
   onDelete: (id: string) => void;
   onImportFile: () => void;
-  onNewGame: (title: string, setup: string) => void;
+  onNewGame: (title: string, setup: string, tint?: RGB) => void;
 }
 
 /** 큰 수를 1.2천 / 3.4만 형태로 다듬는다 */
@@ -37,37 +37,93 @@ const SETUP_PLACEHOLDER = `자유롭게 원하는 세계와 주인공을 설정�
 interface Choice {
   label: string;
   icon: string;
+  color: RGB;
   snippet: string;
 }
 
 const GENRES: Choice[] = [
-  { label: '정통 판타지', icon: '⚔️', snippet: '검과 마법이 살아 숨쉬는 중세 판타지 세계. 모험가와 왕국, 던전과 마물, 고대의 전설이 존재한다.' },
-  { label: 'SF·우주', icon: '🚀', snippet: '인류가 별과 별 사이를 오가는 먼 미래. 첨단 기술과 외계 문명, 거대한 우주선과 식민 행성이 펼쳐진다.' },
-  { label: '현대 도시', icon: '🌆', snippet: '겉으로는 평범한 현대 도시. 그러나 그 이면에는 숨겨진 비밀과 초자연적 존재가 도사린다.' },
-  { label: '무협·동양', icon: '🐉', snippet: '무공과 협객이 강호를 누비는 동양 무협 세계. 문파와 비급, 은원과 강호의 의리가 얽힌다.' },
-  { label: '호러·미스터리', icon: '🕯️', snippet: '한 치 앞을 알 수 없는 미스터리와 공포가 감도는 세계. 풀리지 않는 수수께끼와 보이지 않는 위협이 주인공을 옥죈다.' },
-  { label: '학원·일상', icon: '🌸', snippet: '청춘과 우정, 설렘이 가득한 학원·일상 무대. 평범한 하루 속에서 작지만 특별한 사건들이 벌어진다.' },
+  { label: '정통 판타지', icon: '⚔️', color: [214, 172, 82], snippet: '검과 마법이 살아 숨쉬는 중세 판타지 세계. 모험가와 왕국, 던전과 마물, 고대의 전설이 존재한다.' },
+  { label: 'SF·우주', icon: '🚀', color: [92, 172, 255], snippet: '인류가 별과 별 사이를 오가는 먼 미래. 첨단 기술과 외계 문명, 거대한 우주선과 식민 행성이 펼쳐진다.' },
+  { label: '현대 도시', icon: '🌆', color: [150, 122, 232], snippet: '겉으로는 평범한 현대 도시. 그러나 그 이면에는 숨겨진 비밀과 초자연적 존재가 도사린다.' },
+  { label: '무협·동양', icon: '🐉', color: [72, 200, 150], snippet: '무공과 협객이 강호를 누비는 동양 무협 세계. 문파와 비급, 은원과 강호의 의리가 얽힌다.' },
+  { label: '호러·미스터리', icon: '🕯️', color: [200, 64, 74], snippet: '한 치 앞을 알 수 없는 미스터리와 공포가 감도는 세계. 풀리지 않는 수수께끼와 보이지 않는 위협이 주인공을 옥죈다.' },
+  { label: '학원·일상', icon: '🌸', color: [255, 150, 192], snippet: '청춘과 우정, 설렘이 가득한 학원·일상 무대. 평범한 하루 속에서 작지만 특별한 사건들이 벌어진다.' },
+  { label: '사이버펑크', icon: '🌃', color: [240, 72, 200], snippet: '네온이 빗물에 번지는 거대 메가시티. 거대 기업과 해커, 의체와 전뇌가 뒤얽힌 하이테크 로우라이프의 세계.' },
+  { label: '포스트 아포칼립스', icon: '☢️', color: [214, 122, 62], snippet: '문명이 무너진 폐허의 대지. 살아남은 자들이 자원을 두고 다투는 황폐하고 거친 종말 이후의 세계.' },
+  { label: '스팀펑크', icon: '⚙️', color: [200, 150, 92], snippet: '증기와 톱니바퀴로 움직이는 빅토리아풍 세계. 비행선과 기계장치, 발명가들의 낭만이 가득하다.' },
+  { label: '신화·전설', icon: '🏺', color: [182, 142, 255], snippet: '신과 영웅, 괴수가 살아 숨쉬는 신화의 시대. 운명의 실타래와 신탁, 거대한 전설이 펼쳐진다.' },
+  { label: '해양·대항해', icon: '🌊', color: [60, 182, 222], snippet: '미지의 바다로 나아가는 대항해 시대. 해적과 보물, 폭풍과 전설의 섬이 수평선 너머에서 기다린다.' },
 ];
 
 const PROTAGONISTS: Choice[] = [
-  { label: '평범한 주인공', icon: '🙂', snippet: '어디에나 있을 법한 평범한 인물이지만, 운명에 이끌려 비범한 사건에 휘말린다.' },
-  { label: '숨은 능력자', icon: '✨', snippet: '남들이 모르는 특별한 힘이나 재능을 지녔지만 그것을 숨기고 살아가는 인물.' },
-  { label: '노련한 전문가', icon: '🎯', snippet: '자신의 분야에서 잔뼈가 굵은 베테랑. 냉철하고 노련하지만 남모를 사연을 품고 있다.' },
-  { label: '정체불명의 이방인', icon: '🌫️', snippet: '과거나 기억이 베일에 싸인 인물. 자신이 누구인지조차 이야기를 따라 차차 밝혀나가야 한다.' },
+  { label: '평범한 주인공', icon: '🙂', color: [184, 192, 212], snippet: '어디에나 있을 법한 평범한 인물이지만, 운명에 이끌려 비범한 사건에 휘말린다.' },
+  { label: '숨은 능력자', icon: '✨', color: [255, 212, 92], snippet: '남들이 모르는 특별한 힘이나 재능을 지녔지만 그것을 숨기고 살아가는 인물.' },
+  { label: '노련한 전문가', icon: '🎯', color: [120, 172, 255], snippet: '자신의 분야에서 잔뼈가 굵은 베테랑. 냉철하고 노련하지만 남모를 사연을 품고 있다.' },
+  { label: '정체불명의 이방인', icon: '🌫️', color: [162, 162, 192], snippet: '과거나 기억이 베일에 싸인 인물. 자신이 누구인지조차 이야기를 따라 차차 밝혀나가야 한다.' },
+  { label: '몰락한 귀족', icon: '👑', color: [212, 182, 122], snippet: '한때 모든 것을 누렸으나 모든 것을 잃은 인물. 자존심과 회한을 품고 재기를 꿈꾼다.' },
+  { label: '천재 발명가', icon: '🔬', color: [92, 212, 212], snippet: '기상천외한 발상과 손재주를 지닌 인물. 호기심이 때로 사고를, 때로 기적을 부른다.' },
+  { label: '떠도는 방랑자', icon: '🧭', color: [200, 172, 132], snippet: '한곳에 머물지 않고 길 위에서 살아가는 인물. 자유롭지만 마음 한구석엔 그리움이 있다.' },
+  { label: '복수를 꿈꾸는 자', icon: '🗡️', color: [210, 82, 82], snippet: '잊지 못할 상처를 안고 복수를 벼르는 인물. 그 집념이 길을 밝히기도, 삼키기도 한다.' },
+  { label: '선택받은 운명', icon: '🌟', color: [255, 230, 142], snippet: '예언이나 운명에 의해 특별한 사명을 짊어진 인물. 거대한 흐름의 중심에 서 있다.' },
+  { label: '반항아·아웃사이더', icon: '🔥', color: [255, 132, 72], snippet: '규칙과 질서에 맞서는 반항적인 인물. 거칠지만 누구보다 뜨거운 신념을 품고 있다.' },
 ];
 
 const MOODS: Choice[] = [
-  { label: '밝고 유쾌한', icon: '☀️', snippet: '밝고 유쾌하며 경쾌한 모험. 위기 속에서도 유머와 따뜻함을 잃지 않는다.' },
-  { label: '진지한 서사', icon: '🏛️', snippet: '진지하고 장대한 서사. 운명과 선택, 성장과 희생이 묵직하게 그려진다.' },
-  { label: '어둡고 긴장감', icon: '🌑', snippet: '어둡고 긴장감 넘치는 분위기. 한 치 앞을 알 수 없는 위험과 서스펜스가 감돈다.' },
-  { label: '잔잔하고 감성적', icon: '🍃', snippet: '잔잔하고 서정적인 분위기. 인물의 감정과 관계, 일상의 작은 순간들이 섬세하게 그려진다.' },
+  { label: '밝고 유쾌한', icon: '☀️', color: [255, 206, 92], snippet: '밝고 유쾌하며 경쾌한 모험. 위기 속에서도 유머와 따뜻함을 잃지 않는다.' },
+  { label: '진지한 서사', icon: '🏛️', color: [150, 172, 212], snippet: '진지하고 장대한 서사. 운명과 선택, 성장과 희생이 묵직하게 그려진다.' },
+  { label: '어둡고 긴장감', icon: '🌑', color: [96, 106, 146], snippet: '어둡고 긴장감 넘치는 분위기. 한 치 앞을 알 수 없는 위험과 서스펜스가 감돈다.' },
+  { label: '잔잔하고 감성적', icon: '🍃', color: [130, 212, 162], snippet: '잔잔하고 서정적인 분위기. 인물의 감정과 관계, 일상의 작은 순간들이 섬세하게 그려진다.' },
+  { label: '로맨틱한', icon: '💞', color: [255, 150, 182], snippet: '설렘과 두근거림이 흐르는 로맨틱한 분위기. 인물 사이의 감정과 관계가 이야기의 중심이 된다.' },
+  { label: '코믹·개그', icon: '🤡', color: [255, 182, 82], snippet: '엉뚱하고 유쾌한 코믹 분위기. 예상을 빗나가는 상황과 능청스러운 대사가 웃음을 자아낸다.' },
+  { label: '장엄한 서사시', icon: '🎺', color: [212, 182, 122], snippet: '운명을 건 거대한 서사시. 영웅과 시대, 흥망성쇠가 웅장하게 펼쳐진다.' },
+  { label: '미스터리·서스펜스', icon: '🔍', color: [142, 122, 202], snippet: '단서와 반전이 얽힌 미스터리. 진실을 향해 한 겹씩 벗겨내는 긴장감이 흐른다.' },
+  { label: '몽환적·초현실', icon: '🌙', color: [172, 152, 255], snippet: '꿈과 현실의 경계가 흐릿한 몽환적 분위기. 비현실적이고 시적인 이미지가 가득하다.' },
+  { label: '비장한·하드보일드', icon: '🥃', color: [182, 122, 102], snippet: '냉정하고 비정한 하드보일드 분위기. 건조한 문체와 묵직한 페이소스가 깔린다.' },
 ];
+
+const GENDERS: Choice[] = [
+  { label: '남성', icon: '♂', color: [92, 152, 255], snippet: '남성' },
+  { label: '여성', icon: '♀', color: [255, 142, 182], snippet: '여성' },
+  { label: '미상', icon: '⚧', color: [182, 152, 232], snippet: '성별은 자유롭게' },
+];
+
+const AGES: Choice[] = [
+  { label: '소년·소녀', icon: '🌱', color: [122, 220, 142], snippet: '10대 소년·소녀' },
+  { label: '청년', icon: '🔆', color: [92, 202, 232], snippet: '20대 청년' },
+  { label: '중년', icon: '🌗', color: [222, 172, 92], snippet: '중년' },
+  { label: '노년', icon: '🕯️', color: [202, 142, 112], snippet: '노년' },
+  { label: '미상', icon: '❔', color: [172, 172, 192], snippet: '나이는 자유롭게' },
+];
+
+/** 카테고리별 번짐 발원점(0~1 비율) — 화면의 서로 다른 지점에서 색이 퍼진다 */
+const ORIGIN = {
+  genre: { fx: 0.22, fy: 0.26 },
+  hero: { fx: 0.78, fy: 0.30 },
+  mood: { fx: 0.5, fy: 0.74 },
+  gender: { fx: 0.18, fy: 0.7 },
+  age: { fx: 0.82, fy: 0.68 },
+} as const;
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(
     d.getDate(),
   ).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+/** 선택된 칩에 자기 색을 입히는 인라인 스타일 (CSS 우선순위와 무관하게 항상 적용) */
+function chipStyle(c: Choice, active: boolean): CSSProperties {
+  if (!active) return {};
+  const [r, g, b] = c.color;
+  const dr = Math.round(r * 0.62);
+  const dg = Math.round(g * 0.62);
+  const db = Math.round(b * 0.62);
+  return {
+    background: `linear-gradient(135deg, rgb(${r},${g},${b}), rgb(${dr},${dg},${db}))`,
+    borderColor: `rgb(${r},${g},${b})`,
+    color: '#fff',
+    boxShadow: `0 4px 20px rgba(${r},${g},${b},0.55), 0 0 0 1px rgba(${r},${g},${b},0.6)`,
+  };
 }
 
 export default function StartScreen({
@@ -86,16 +142,41 @@ export default function StartScreen({
   const [genre, setGenre] = useState<number | null>(null);
   const [hero, setHero] = useState<number | null>(null);
   const [mood, setMood] = useState<number | null>(null);
+  const [gender, setGender] = useState<number | null>(null);
+  const [age, setAge] = useState<number | null>(null);
   const [extra, setExtra] = useState('');
 
   const hasJourney = !!stats && (stats.turns > 0 || stats.adventures > 0);
 
-  const choiceReady = genre !== null && hero !== null && mood !== null;
+  const choiceReady =
+    genre !== null && hero !== null && mood !== null && gender !== null && age !== null;
+
+  // 현재 선택에 따른 배경 색 물감들
+  const tints: Tint[] = [];
+  if (genre !== null) tints.push({ key: 'genre', color: GENRES[genre].color, ...ORIGIN.genre });
+  if (hero !== null) tints.push({ key: 'hero', color: PROTAGONISTS[hero].color, ...ORIGIN.hero });
+  if (mood !== null) tints.push({ key: 'mood', color: MOODS[mood].color, ...ORIGIN.mood });
+  if (gender !== null) tints.push({ key: 'gender', color: GENDERS[gender].color, ...ORIGIN.gender });
+  if (age !== null) tints.push({ key: 'age', color: AGES[age].color, ...ORIGIN.age });
+
+  /** 선택된 색들을 평균낸 웜홀용 톤 */
+  function combinedTint(): RGB | undefined {
+    if (tints.length === 0) return undefined;
+    const sum = tints.reduce(
+      (acc, t) => [acc[0] + t.color[0], acc[1] + t.color[1], acc[2] + t.color[2]] as RGB,
+      [0, 0, 0] as RGB,
+    );
+    return [
+      Math.round(sum[0] / tints.length),
+      Math.round(sum[1] / tints.length),
+      Math.round(sum[2] / tints.length),
+    ];
+  }
 
   function buildChoiceSetup(): string {
     const lines = [
       `- 세계관: ${GENRES[genre!].snippet}`,
-      `- 주인공: ${PROTAGONISTS[hero!].snippet}`,
+      `- 주인공: ${GENDERS[gender!].snippet} / ${AGES[age!].snippet}. ${PROTAGONISTS[hero!].snippet}`,
       `- 분위기: ${MOODS[mood!].snippet}`,
     ];
     if (extra.trim()) lines.push(`- 추가 요청: ${extra.trim()}`);
@@ -106,7 +187,7 @@ export default function StartScreen({
     if (setupMode === 'choice') {
       if (!choiceReady) return;
       const autoTitle = title.trim() || `${GENRES[genre!].label} 모험`;
-      onNewGame(autoTitle, buildChoiceSetup());
+      onNewGame(autoTitle, buildChoiceSetup(), combinedTint());
     } else {
       if (!setup.trim()) return;
       onNewGame(title.trim() || '새 모험', setup.trim());
@@ -115,9 +196,29 @@ export default function StartScreen({
 
   const startDisabled = busy || (setupMode === 'choice' ? !choiceReady : !setup.trim());
 
+  const renderChips = (
+    list: Choice[],
+    selected: number | null,
+    onPick: (i: number) => void,
+  ) => (
+    <div className="choice-chips">
+      {list.map((c, i) => (
+        <button
+          key={i}
+          className={selected === i ? 'choice-chip selected' : 'choice-chip'}
+          style={chipStyle(c, selected === i)}
+          onClick={() => onPick(i)}
+        >
+          <span className="chip-icon">{c.icon}</span>
+          {c.label}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div id="start-screen">
-      <StarfieldBackground />
+      <StarfieldBackground tints={tints} />
       <h1>📜 텍스트 RPG</h1>
       <p className="subtitle">AI와 떠나는, 오직 나만의 이야기</p>
 
@@ -230,54 +331,33 @@ export default function StartScreen({
 
         {setupMode === 'choice' ? (
           <>
-            <p className="setup-hint">몇 가지만 고르면 AI가 나머지 이야기를 만들어 드려요.</p>
+            <p className="setup-hint">
+              마음에 드는 칩을 골라보세요. 고를 때마다 우주에 그 색이 번져 나가요 🌌
+            </p>
 
             <div className="choice-group">
               <span className="choice-label">🌍 세계관</span>
-              <div className="choice-chips">
-                {GENRES.map((c, i) => (
-                  <button
-                    key={i}
-                    className={genre === i ? 'choice-chip selected' : 'choice-chip'}
-                    onClick={() => setGenre(i)}
-                  >
-                    <span className="chip-icon">{c.icon}</span>
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+              {renderChips(GENRES, genre, setGenre)}
             </div>
 
             <div className="choice-group">
               <span className="choice-label">🧑 주인공</span>
-              <div className="choice-chips">
-                {PROTAGONISTS.map((c, i) => (
-                  <button
-                    key={i}
-                    className={hero === i ? 'choice-chip selected' : 'choice-chip'}
-                    onClick={() => setHero(i)}
-                  >
-                    <span className="chip-icon">{c.icon}</span>
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+              {renderChips(PROTAGONISTS, hero, setHero)}
+            </div>
+
+            <div className="choice-group choice-group-inline">
+              <span className="choice-label">⚧ 성별</span>
+              {renderChips(GENDERS, gender, setGender)}
+            </div>
+
+            <div className="choice-group choice-group-inline">
+              <span className="choice-label">🎂 연령</span>
+              {renderChips(AGES, age, setAge)}
             </div>
 
             <div className="choice-group">
               <span className="choice-label">🎭 분위기</span>
-              <div className="choice-chips">
-                {MOODS.map((c, i) => (
-                  <button
-                    key={i}
-                    className={mood === i ? 'choice-chip selected' : 'choice-chip'}
-                    onClick={() => setMood(i)}
-                  >
-                    <span className="chip-icon">{c.icon}</span>
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+              {renderChips(MOODS, mood, setMood)}
             </div>
 
             <input
@@ -312,7 +392,11 @@ export default function StartScreen({
         )}
 
         <button className="btn-primary" disabled={startDisabled} onClick={handleStart}>
-          {busy ? '오프닝 장면 생성 중...' : '✦ 모험 시작'}
+          {busy
+            ? '오프닝 장면 생성 중...'
+            : setupMode === 'choice' && !choiceReady
+              ? '모든 항목을 골라주세요'
+              : '✦ 모험 시작'}
         </button>
       </div>
     </div>

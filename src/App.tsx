@@ -64,6 +64,7 @@ export default function App() {
   const [stats, setStats] = useState<JourneyStats | null>(null);
   const [warping, setWarping] = useState(false);
   const [warpLabel, setWarpLabel] = useState<string | undefined>(undefined);
+  const [warpTint, setWarpTint] = useState<[number, number, number] | undefined>(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
   const warpStartRef = useRef(0);
@@ -129,8 +130,9 @@ export default function App() {
   }
 
   /** 웜홀 전환 시작: 최소 노출 시간을 보장하기 위해 시작 시각을 기록 */
-  function startWarp(label?: string) {
+  function startWarp(label?: string, tint?: [number, number, number]) {
     setWarpLabel(label);
+    setWarpTint(tint);
     warpStartRef.current = Date.now();
     setWarping(true);
   }
@@ -205,10 +207,10 @@ export default function App() {
     void runExchange(store.game, text, finalPrompt);
   }
 
-  async function handleNewGame(title: string, setup: string) {
+  async function handleNewGame(title: string, setup: string, tint?: [number, number, number]) {
     if (store.dirty && !confirm('저장하지 않은 진행이 있습니다. 새 모험을 시작할까요?')) return;
     const game = emptyGame(title, setup);
-    startWarp(title);
+    startWarp(title, tint);
     let id: string;
     try {
       id = await createSave(uid, game);
@@ -442,7 +444,7 @@ ${store.game.fixedMemory}
           onContinue={(id) => void handleContinue(id)}
           onDelete={(id) => void handleDeleteSave(id)}
           onImportFile={() => void handleImportFile()}
-          onNewGame={(title, setup) => void handleNewGame(title, setup)}
+          onNewGame={(title, setup, tint) => void handleNewGame(title, setup, tint)}
         />
       )}
 
@@ -464,7 +466,7 @@ ${store.game.fixedMemory}
         />
       )}
       {showAdmin && profile?.is_admin && <AdminPanel onClose={() => setShowAdmin(false)} />}
-      <WormholeTransition active={warping} label={warpLabel} />
+      <WormholeTransition active={warping} label={warpLabel} tint={warpTint} />
     </>
   );
 }

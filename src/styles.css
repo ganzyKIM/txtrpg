@@ -694,6 +694,7 @@ select.mode-select:focus { border-color: #1a73e8; }
   display: block; font-size: 12px; font-weight: 700;
   color: #aebbe2; margin-bottom: 8px; letter-spacing: 0.01em;
 }
+.choice-group-inline { display: inline-block; width: 100%; }
 .choice-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .choice-chip {
   display: inline-flex; align-items: center; gap: 6px;
@@ -701,19 +702,22 @@ select.mode-select:focus { border-color: #1a73e8; }
   background: rgba(10,16,38,0.55); color: #c3cde8;
   border: 1px solid rgba(150,180,255,0.16); border-radius: 20px;
   cursor: pointer; font-family: inherit;
-  transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.08s;
+  transition: background 0.14s, border-color 0.14s, color 0.14s,
+    transform 0.1s, box-shadow 0.18s;
 }
 .choice-chip .chip-icon { font-size: 15px; line-height: 1; }
 .choice-chip:hover {
-  border-color: rgba(150,180,255,0.4); color: #fff;
-  background: rgba(20,30,60,0.7);
+  border-color: rgba(150,180,255,0.45); color: #fff;
+  background: rgba(24,34,68,0.8);
+  transform: translateY(-1px);
 }
+/* 선택 시 색·발광은 인라인 스타일(칩 고유색)이 담당. 여기선 형태만 강조 */
 .choice-chip.selected {
-  background: linear-gradient(135deg, rgba(109,155,255,0.85), rgba(80,120,230,0.85));
-  border-color: #8db4ff; color: #fff;
-  box-shadow: 0 4px 16px rgba(80,120,230,0.4);
+  font-weight: 700;
+  transform: translateY(-2px);
 }
-.choice-chip:active { transform: scale(0.96); }
+.choice-chip.selected .chip-icon { transform: scale(1.15); }
+.choice-chip:active { transform: scale(0.95); }
 
 #start-screen .start-card input[type="text"],
 #start-screen .start-card textarea {
