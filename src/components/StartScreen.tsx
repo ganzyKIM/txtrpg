@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import type { JourneyStats, SaveMeta } from '../save/cloudSave';
 import { TEXT_TIERS } from '../config/models';
 import StarfieldBackground, { type RGB, type Tint } from './StarfieldBackground';
@@ -86,13 +86,19 @@ const AGES: Choice[] = [
   { label: '미상', icon: '❔', color: [172, 172, 192], snippet: '나이는 자유롭게' },
 ];
 
-const ORIGIN = {
-  genre: { fx: 0.22, fy: 0.26 },
-  hero: { fx: 0.78, fy: 0.30 },
-  mood: { fx: 0.5, fy: 0.74 },
-  gender: { fx: 0.18, fy: 0.7 },
-  age: { fx: 0.82, fy: 0.68 },
-} as const;
+/** 칩을 고를 때마다 새 발원점을 무작위로 — 화면 가장자리는 살짝 피한다 */
+interface Origin {
+  fx: number;
+  fy: number;
+  nonce: number;
+}
+function randomOrigin(nonce: number): Origin {
+  return {
+    fx: 0.16 + Math.random() * 0.68,
+    fy: 0.16 + Math.random() * 0.68,
+    nonce,
+  };
+}
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -135,6 +141,17 @@ export default function StartScreen({
   const [genreCustom, setGenreCustom] = useState('');
   const [heroCustom, setHeroCustom] = useState('');
   const [moodCustom, setMoodCustom] = useState('');
+  // 각 카테고리의 현재 잉크 발원점 (칩을 고를 때마다 새 좌표로 갱신)
+  const [origins, setOrigins] = useState<Record<string, Origin>>({});
+  const nonceRef = useRef(0);
+
+  /** 칩 선택 + 그 카테고리의 잉크 발원점을 새 무작위 위치로 */
+  function pick(key: string, setter: (i: number) => void) {
+    return (i: number) => {
+      setter(i);
+      setOrigins((o) => ({ ...o, [key]: randomOrigin(++nonceRef.current) }));
+    };
+  }
 
   const hasJourney = !!stats && (stats.turns > 0 || stats.adventures > 0);
 
@@ -143,12 +160,18 @@ export default function StartScreen({
   const moodOk = mood !== null && (!MOODS[mood].custom || moodCustom.trim().length > 0);
   const choiceReady = genreOk && heroOk && moodOk && gender !== null && age !== null;
 
+  // key에 nonce를 섞어, 다른 칩을 고르면 이전 잉크는 흩어지고 새 점에서 다시 피어난다
   const tints: Tint[] = [];
-  if (genre !== null) tints.push({ key: 'genre', color: GENRES[genre].color, ...ORIGIN.genre });
-  if (hero !== null) tints.push({ key: 'hero', color: PROTAGONISTS[hero].color, ...ORIGIN.hero });
-  if (mood !== null) tints.push({ key: 'mood', color: MOODS[mood].color, ...ORIGIN.mood });
-  if (gender !== null) tints.push({ key: 'gender', color: GENDERS[gender].color, ...ORIGIN.gender });
-  if (age !== null) tints.push({ key: 'age', color: AGES[age].color, ...ORIGIN.age });
+  const addTint = (cat: string, color: RGB, sel: number | null) => {
+    const o = origins[cat];
+    if (sel === null || !o) return;
+    tints.push({ key: `${cat}-${o.nonce}`, color, fx: o.fx, fy: o.fy });
+  };
+  if (genre !== null) addTint('genre', GENRES[genre].color, genre);
+  if (hero !== null) addTint('hero', PROTAGONISTS[hero].color, hero);
+  if (mood !== null) addTint('mood', MOODS[mood].color, mood);
+  if (gender !== null) addTint('gender', GENDERS[gender].color, gender);
+  if (age !== null) addTint('age', AGES[age].color, age);
 
   function combinedTint(): RGB | undefined {
     if (tints.length === 0) return undefined;
@@ -323,27 +346,27 @@ export default function StartScreen({
 
         <div className="choice-group">
           <span className="choice-label">🌍 세계관</span>
-          {renderChips(GENRES, genre, setGenre, genreCustom, setGenreCustom)}
+          {renderChips(GENRES, genre, pick('genre', setGenre), genreCustom, setGenreCustom)}
         </div>
 
         <div className="choice-group">
           <span className="choice-label">🧑 주인공</span>
-          {renderChips(PROTAGONISTS, hero, setHero, heroCustom, setHeroCustom)}
+          {renderChips(PROTAGONISTS, hero, pick('hero', setHero), heroCustom, setHeroCustom)}
         </div>
 
         <div className="choice-group choice-group-inline">
           <span className="choice-label">⚧ 성별</span>
-          {renderChips(GENDERS, gender, setGender)}
+          {renderChips(GENDERS, gender, pick('gender', setGender))}
         </div>
 
         <div className="choice-group choice-group-inline">
           <span className="choice-label">🎂 연령</span>
-          {renderChips(AGES, age, setAge)}
+          {renderChips(AGES, age, pick('age', setAge))}
         </div>
 
         <div className="choice-group">
           <span className="choice-label">🎭 분위기</span>
-          {renderChips(MOODS, mood, setMood, moodCustom, setMoodCustom)}
+          {renderChips(MOODS, mood, pick('mood', setMood), moodCustom, setMoodCustom)}
         </div>
 
         <input

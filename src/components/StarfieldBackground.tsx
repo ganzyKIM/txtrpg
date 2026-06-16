@@ -24,6 +24,14 @@ export interface Tint {
   fy: number;
 }
 
+/** 잉크가 사방으로 뻗는 한 가닥(물방울) */
+interface Droplet {
+  ang: number; // 발원점 기준 방향
+  dist: number; // 뻗는 거리 비율 (0~1)
+  size: number; // 방울 크기 비율
+  phase: number; // 일렁임 위상
+}
+
 interface Blob {
   color: RGB;
   target: RGB;
@@ -32,11 +40,27 @@ interface Blob {
   t0: number;
   alive: boolean;
   deadAt: number;
+  droplets: Droplet[];
 }
 
-const SPREAD_MS = 3200; // 물감이 최대로 퍼지는 데 걸리는 시간 (천천히)
+const SPREAD_MS = 2600; // 물감이 최대로 퍼지는 데 걸리는 시간 (천천히)
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+/** 불규칙하게 사방으로 뻗는 잉크 가닥들을 생성 — 물에 떨어진 물감처럼 */
+function makeDroplets(): Droplet[] {
+  const drops: Droplet[] = [{ ang: 0, dist: 0, size: 1, phase: 0 }]; // 중심 핵
+  const n = 5 + Math.floor(Math.random() * 4); // 5~8 가닥
+  for (let i = 0; i < n; i++) {
+    drops.push({
+      ang: Math.random() * Math.PI * 2,
+      dist: 0.32 + Math.random() * 0.68,
+      size: 0.34 + Math.random() * 0.5,
+      phase: Math.random() * Math.PI * 2,
+    });
+  }
+  return drops;
+}
 
 /**
  * 마우스와 상호작용하는 우주 파티클 배경.
@@ -72,6 +96,7 @@ export default function StarfieldBackground({ tints }: { tints?: Tint[] }) {
           t0: now,
           alive: true,
           deadAt: 0,
+          droplets: makeDroplets(),
         });
       }
     }
@@ -138,37 +163,51 @@ export default function StarfieldBackground({ tints }: { tints?: Tint[] }) {
     function drawTints(now: number) {
       const blobs = blobsRef.current;
       if (blobs.size === 0) return;
-      const maxR = Math.max(w, h) * 0.72;
+      // 번짐이 닿는 최대 반경 — 화면 일부에만 머물도록 국소적으로 제한
+      const reach = Math.min(w, h) * 0.42;
       ctx!.globalCompositeOperation = 'lighter';
       for (const [key, b] of blobs) {
         // 타깃 색으로 부드럽게 보간
         b.color = [
-          lerp(b.color[0], b.target[0], 0.04),
-          lerp(b.color[1], b.target[1], 0.04),
-          lerp(b.color[2], b.target[2], 0.04),
+          lerp(b.color[0], b.target[0], 0.05),
+          lerp(b.color[1], b.target[1], 0.05),
+          lerp(b.color[2], b.target[2], 0.05),
         ];
         const age = now - b.t0;
         const grow = easeOut(Math.min(1, age / SPREAD_MS));
-        const r = Math.max(1, maxR * grow);
-        // 페이드 인(0.6s) · 페이드 아웃
-        let alpha = Math.min(1, age / 600) * 0.34;
+        // 페이드 인(0.5s) · 제거 시 천천히 흩어짐(1.1s)
+        let fade = Math.min(1, age / 500);
         if (!b.alive) {
-          const dead = (now - b.deadAt) / 900;
-          alpha *= Math.max(0, 1 - dead);
+          const dead = (now - b.deadAt) / 1100;
+          fade *= Math.max(0, 1 - dead);
           if (dead >= 1) {
             blobs.delete(key);
             continue;
           }
         }
-        const cx = b.fx * w;
-        const cy = b.fy * h;
+        const ox = b.fx * w;
+        const oy = b.fy * h;
         const [cr, cg, cb] = b.color.map((v) => Math.round(v));
-        const grad = ctx!.createRadialGradient(cx, cy, 0, cx, cy, r);
-        grad.addColorStop(0, `rgba(${cr},${cg},${cb},${alpha})`);
-        grad.addColorStop(0.45, `rgba(${cr},${cg},${cb},${alpha * 0.45})`);
-        grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
-        ctx!.fillStyle = grad;
-        ctx!.fillRect(0, 0, w, h);
+
+        for (const d of b.droplets) {
+          // 가닥이 발원점에서 바깥으로 뻗어 나가며, 천천히 일렁인다
+          const wob = reach * 0.05;
+          const reachNow = d.dist * reach * grow;
+          const cx = ox + Math.cos(d.ang) * reachNow + Math.sin(now / 1600 + d.phase) * wob;
+          const cy = oy + Math.sin(d.ang) * reachNow + Math.cos(now / 1700 + d.phase) * wob;
+          const rad = Math.max(2, d.size * reach * (0.42 + 0.58 * grow));
+          // 멀리 뻗은 가닥일수록 옅게, 핵은 진하게
+          const a = fade * 0.2 * (d.dist === 0 ? 1 : 1 - d.dist * 0.5);
+          if (a <= 0.002) continue;
+          const grad = ctx!.createRadialGradient(cx, cy, 0, cx, cy, rad);
+          grad.addColorStop(0, `rgba(${cr},${cg},${cb},${a})`);
+          grad.addColorStop(0.5, `rgba(${cr},${cg},${cb},${a * 0.35})`);
+          grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+          ctx!.fillStyle = grad;
+          ctx!.beginPath();
+          ctx!.arc(cx, cy, rad, 0, Math.PI * 2);
+          ctx!.fill();
+        }
       }
       ctx!.globalCompositeOperation = 'source-over';
     }
