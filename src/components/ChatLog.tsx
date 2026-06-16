@@ -13,14 +13,28 @@ interface Props {
   busy: boolean;
   onGenerateImage: (turnId: string, selectedText: string) => void;
   onToggleExclude: (turnId: string) => void;
+  onScrollDir?: (hideHeader: boolean) => void;
 }
 
-export default function ChatLog({ turns, busy, onGenerateImage, onToggleExclude }: Props) {
+export default function ChatLog({ turns, busy, onGenerateImage, onToggleExclude, onScrollDir }: Props) {
   const boxRef = useRef<HTMLDivElement>(null);
   const [imgBtn, setImgBtn] = useState<ImgBtnState | null>(null);
+  const lastScrollTop = useRef(0);
 
   const lastTurnId = turns.at(-1)?.id ?? null;
   const lastTurnRole = turns.at(-1)?.role ?? null;
+
+  function handleScroll() {
+    const box = boxRef.current;
+    if (!box || !onScrollDir) return;
+    const cur = box.scrollTop;
+    const delta = cur - lastScrollTop.current;
+    // 위쪽 끝 근처에서는 항상 헤더를 보여준다
+    if (cur < 40) onScrollDir(false);
+    else if (delta > 6) onScrollDir(true); // 아래로 스크롤 → 숨김
+    else if (delta < -6) onScrollDir(false); // 위로 스크롤 → 표시
+    lastScrollTop.current = cur;
+  }
 
   useEffect(() => {
     const box = boxRef.current;
@@ -73,7 +87,7 @@ export default function ChatLog({ turns, busy, onGenerateImage, onToggleExclude 
   }
 
   return (
-    <div id="chatBox" ref={boxRef} onMouseUp={handleMouseUp}>
+    <div id="chatBox" ref={boxRef} onMouseUp={handleMouseUp} onScroll={handleScroll}>
       {turns.map((turn) => (
         <div
           key={turn.id}

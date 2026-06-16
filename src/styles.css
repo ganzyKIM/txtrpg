@@ -22,6 +22,15 @@ body {
   font-size: 13px; user-select: none;
   box-shadow: 0 1px 6px rgba(0,0,0,0.07);
   overflow: visible;
+  transition: height 0.26s ease, opacity 0.22s ease, box-shadow 0.26s ease;
+}
+#toolbar.header-hidden {
+  height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  box-shadow: none;
+  border-bottom-color: transparent;
 }
 #toolbar-desktop-menu {
   display: flex; align-items: center; gap: 2px; flex-shrink: 0;
@@ -218,13 +227,19 @@ textarea.chat-input::placeholder { color: #c0c5ce; }
 
 /* ── Image Generation Area ───────────────────────────────── */
 #image-gen-area {
-  margin-top: 16px; padding-top: 16px;
+  margin-top: 14px; padding-top: 14px;
   border-top: 1px solid #f0f2f6;
 }
-#image-gen-area label {
-  display: block; font-size: 12px; font-weight: 600;
-  color: #4b5263; margin-bottom: 6px;
+.image-gen-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 9px 12px; font-size: 12.5px; font-weight: 600;
+  background: #f6f7fa; border: 1px solid #e4e7ec; border-radius: 8px;
+  color: #4b5263; cursor: pointer; font-family: inherit;
+  transition: background 0.13s, border-color 0.13s;
 }
+.image-gen-toggle:hover { background: #eef1f6; border-color: #d4d9e2; }
+.toggle-caret { font-size: 11px; color: #9ea5b2; }
+.image-gen-body { margin-top: 10px; }
 textarea.image-input {
   width: 100%; border: 1px solid #e4e7ec; outline: none;
   resize: none; font-family: inherit;

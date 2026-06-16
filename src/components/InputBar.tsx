@@ -28,6 +28,7 @@ export default function InputBar({
 }: Props) {
   const [text, setText] = useState('');
   const [imgText, setImgText] = useState('');
+  const [imgOpen, setImgOpen] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const imgRef = useRef<HTMLTextAreaElement>(null);
 
@@ -111,31 +112,42 @@ export default function InputBar({
       </div>
 
       {onGenerateImage && lastTurnId && (
-        <div id="image-gen-area">
-          <label htmlFor="img-input">🖼️ 이미지로 생성할 장면 설명 (선택)</label>
-          <textarea
-            id="img-input"
-            ref={imgRef}
-            className="image-input"
-            rows={2}
-            placeholder="이야기에서 가장 인상적인 부분을 복붙하세요. 그 장면의 삽화가 생성됩니다."
-            value={imgText}
-            disabled={!!busyMessage}
-            onChange={(e) => {
-              setImgText(e.target.value);
-              if (imgRef.current) {
-                imgRef.current.style.height = 'auto';
-                imgRef.current.style.height = `${imgRef.current.scrollHeight}px`;
-              }
-            }}
-          />
+        <div id="image-gen-area" className={imgOpen ? 'open' : ''}>
           <button
-            className="btn-image-gen"
-            disabled={!imgText.trim() || !!busyMessage}
-            onClick={handleGenerateImage}
+            className="image-gen-toggle"
+            onClick={() => setImgOpen((v) => !v)}
+            aria-expanded={imgOpen}
           >
-            ✨ 삽화 생성
+            <span>🖼️ 장면을 이미지로 생성</span>
+            <span className="toggle-caret">{imgOpen ? '▴' : '▾'}</span>
           </button>
+          {imgOpen && (
+            <div className="image-gen-body">
+              <textarea
+                id="img-input"
+                ref={imgRef}
+                className="image-input"
+                rows={2}
+                placeholder="이야기에서 가장 인상적인 부분을 복붙하세요. 그 장면의 삽화가 생성됩니다."
+                value={imgText}
+                disabled={!!busyMessage}
+                onChange={(e) => {
+                  setImgText(e.target.value);
+                  if (imgRef.current) {
+                    imgRef.current.style.height = 'auto';
+                    imgRef.current.style.height = `${imgRef.current.scrollHeight}px`;
+                  }
+                }}
+              />
+              <button
+                className="btn-image-gen"
+                disabled={!imgText.trim() || !!busyMessage}
+                onClick={handleGenerateImage}
+              >
+                ✨ 삽화 생성
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

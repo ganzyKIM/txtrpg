@@ -65,6 +65,7 @@ export default function App() {
   const [warping, setWarping] = useState(false);
   const [warpLabel, setWarpLabel] = useState<string | undefined>(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
   const warpStartRef = useRef(0);
   const memoryBusyRef = useRef(false);
 
@@ -334,7 +335,10 @@ ${store.game.fixedMemory}
 
   return (
     <>
-      <div id="toolbar" className={game ? undefined : 'cosmic'}>
+      <div
+        id="toolbar"
+        className={[game ? '' : 'cosmic', headerHidden && game ? 'header-hidden' : ''].filter(Boolean).join(' ') || undefined}
+      >
         {game ? (
           <>
             {/* 데스크톱: 메뉴 버튼 나열 */}
@@ -411,6 +415,7 @@ ${store.game.fixedMemory}
             busy={!!busy}
             onGenerateImage={(turnId, text) => void handleGenerateImage(turnId, text)}
             onToggleExclude={(turnId) => dispatch({ type: 'toggleExclude', turnId })}
+            onScrollDir={setHeaderHidden}
           />
           <InputBar
             busyMessage={busy}
