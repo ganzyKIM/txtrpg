@@ -630,18 +630,24 @@ select.mode-select:focus { border-color: #1a73e8; }
     height: 100%;
     overflow: hidden;
   }
-  body {
+  /* React 루트를 flex 체인에 포함시켜 안쪽 화면이 높이를 잡게 한다 */
+  #root {
+    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
+  #toolbar { flex-shrink: 0; }
 
   /* Auth loading */
-  #auth-loading { flex: 1; min-height: 0; }
+  #auth-loading { flex: 1; min-height: 0; height: auto; }
 
-  /* Login screen: fills viewport, no outer scroll */
+  /* Login screen: fills viewport, scrolls internally if 내용이 길면 */
   #login-screen {
     flex: 1;
     min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Start screen: internal scroll only */
@@ -675,6 +681,7 @@ select.mode-select:focus { border-color: #1a73e8; }
     flex: 1;
     min-height: 0;
     height: auto;
+    -webkit-overflow-scrolling: touch;
   }
   #input-area {
     flex-shrink: 0;
