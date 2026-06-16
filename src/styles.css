@@ -589,11 +589,11 @@ select.mode-select:focus { border-color: #1a73e8; }
 /* ── Journey Dashboard (home) ─────────────────────────────── */
 .journey-dashboard {
   position: relative; z-index: 1;
-  background: rgba(20,28,58,0.5);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(150,180,255,0.18);
+  background: rgba(8,12,30,0.42);
+  backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid rgba(180,210,255,0.18);
   border-radius: 16px; padding: 22px 26px; margin-bottom: 16px;
-  box-shadow: 0 10px 44px rgba(0,0,0,0.4), 0 0 50px rgba(70,110,220,0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.07);
   animation: card-rise 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .journey-headline {
@@ -605,8 +605,9 @@ select.mode-select:focus { border-color: #1a73e8; }
 .journey-stat {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 16px 8px; border-radius: 12px;
-  background: rgba(10,16,38,0.5);
-  border: 1px solid rgba(150,180,255,0.12);
+  background: rgba(6,10,26,0.48);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(150,180,255,0.14);
   transition: transform 0.16s, border-color 0.16s, box-shadow 0.16s;
 }
 .journey-stat:hover {
@@ -702,26 +703,27 @@ select.mode-select:focus { border-color: #1a73e8; }
 #start-screen .subtitle { color: #9fb0d8; }
 
 #start-screen .start-card {
-  background: rgba(18,25,52,0.5);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(150,180,255,0.14);
-  box-shadow: 0 10px 44px rgba(0,0,0,0.4);
+  background: rgba(8,12,30,0.42);
+  backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid rgba(180,210,255,0.16);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
   color: #dbe3f6;
 }
 #start-screen .start-card:hover {
-  box-shadow: 0 14px 54px rgba(60,90,200,0.28);
-  border-color: rgba(150,180,255,0.24);
+  box-shadow: 0 12px 44px rgba(60,90,200,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+  border-color: rgba(180,210,255,0.26);
 }
 #start-screen .start-card h2 { color: #fff; }
 #start-screen .start-card h2::before { background: #6d9bff; box-shadow: 0 0 12px rgba(109,155,255,0.8); }
 #start-screen .start-card p { color: #9fb0d8; }
 
 #start-screen .guide-card {
-  background: rgba(28,38,78,0.5);
-  border-color: rgba(150,180,255,0.2);
+  background: rgba(12,18,42,0.38);
+  border-color: rgba(180,210,255,0.18);
 }
 #start-screen .guide-list li {
-  background: rgba(12,18,42,0.5);
+  background: rgba(6,10,26,0.52);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   border-color: rgba(150,180,255,0.14);
   color: #c3cde8;
 }
