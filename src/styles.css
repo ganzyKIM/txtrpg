@@ -518,13 +518,13 @@ select.mode-select:focus { border-color: #1a73e8; }
 
 #login-card {
   position: relative; z-index: 1;
-  background: rgba(16,22,46,0.55);
-  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  background: rgba(40,60,140,0.14);
+  backdrop-filter: blur(32px) saturate(180%); -webkit-backdrop-filter: blur(32px) saturate(180%);
   border-radius: 22px; padding: 54px 46px;
   text-align: center;
-  box-shadow: 0 30px 90px rgba(0,0,0,0.55), 0 0 60px rgba(70,110,220,0.12);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.12);
   max-width: 410px; width: 90%;
-  border: 1px solid rgba(150,180,255,0.18);
+  border: 1px solid rgba(200,220,255,0.22);
   animation: card-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 @keyframes card-rise {
@@ -589,11 +589,11 @@ select.mode-select:focus { border-color: #1a73e8; }
 /* ── Journey Dashboard (home) ─────────────────────────────── */
 .journey-dashboard {
   position: relative; z-index: 1;
-  background: rgba(8,12,30,0.42);
-  backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
-  border: 1px solid rgba(180,210,255,0.18);
+  background: rgba(40,60,140,0.12);
+  backdrop-filter: blur(32px) saturate(180%); -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(200,220,255,0.22);
   border-radius: 16px; padding: 22px 26px; margin-bottom: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.07);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.10);
   animation: card-rise 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .journey-headline {
@@ -605,9 +605,9 @@ select.mode-select:focus { border-color: #1a73e8; }
 .journey-stat {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 16px 8px; border-radius: 12px;
-  background: rgba(6,10,26,0.48);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(150,180,255,0.14);
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(200,220,255,0.16);
   transition: transform 0.16s, border-color 0.16s, box-shadow 0.16s;
 }
 .journey-stat:hover {
@@ -703,28 +703,28 @@ select.mode-select:focus { border-color: #1a73e8; }
 #start-screen .subtitle { color: #9fb0d8; }
 
 #start-screen .start-card {
-  background: rgba(8,12,30,0.42);
-  backdrop-filter: blur(26px) saturate(160%); -webkit-backdrop-filter: blur(26px) saturate(160%);
-  border: 1px solid rgba(180,210,255,0.16);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+  background: rgba(40,60,140,0.12);
+  backdrop-filter: blur(32px) saturate(180%); -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid rgba(200,220,255,0.20);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.10);
   color: #dbe3f6;
 }
 #start-screen .start-card:hover {
-  box-shadow: 0 12px 44px rgba(60,90,200,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
-  border-color: rgba(180,210,255,0.26);
+  box-shadow: 0 12px 40px rgba(60,90,200,0.22), inset 0 1px 0 rgba(255,255,255,0.14);
+  border-color: rgba(200,220,255,0.32);
 }
 #start-screen .start-card h2 { color: #fff; }
 #start-screen .start-card h2::before { background: #6d9bff; box-shadow: 0 0 12px rgba(109,155,255,0.8); }
 #start-screen .start-card p { color: #9fb0d8; }
 
 #start-screen .guide-card {
-  background: rgba(12,18,42,0.38);
-  border-color: rgba(180,210,255,0.18);
+  background: rgba(30,50,120,0.10);
+  border-color: rgba(200,220,255,0.20);
 }
 #start-screen .guide-list li {
-  background: rgba(6,10,26,0.52);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  border-color: rgba(150,180,255,0.14);
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(180,200,255,0.16);
   color: #c3cde8;
 }
 #start-screen .guide-list b { color: #8db4ff; }

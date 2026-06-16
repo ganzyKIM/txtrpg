@@ -242,156 +242,161 @@ export default function StartScreen({
     );
   };
 
+  const hasSaves = savesLoading || saves.length > 0;
+
+  const savesCard = (
+    <div className="start-card">
+      <h2>이어하기</h2>
+      {savesLoading ? (
+        <p>저장 목록을 불러오는 중...</p>
+      ) : saves.length === 0 ? (
+        <p>저장된 모험이 없습니다.</p>
+      ) : (
+        <ul className="save-list">
+          {saves.map((s) => (
+            <li key={s.id} className="save-item">
+              <button className="save-open" disabled={busy} onClick={() => onContinue(s.id)}>
+                <span className="save-title">{s.title}</span>
+                <span className="save-meta">{s.turnCount}턴 · {formatDate(s.updatedAt)}</span>
+              </button>
+              <button className="save-delete" disabled={busy} title="삭제" onClick={() => onDelete(s.id)}>
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
+                  strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 6h18" /><path d="M8 6V4h8v2" />
+                  <path d="M6 6l1 14h10l1-14" /><path d="M10 11v6M14 11v6" />
+                </svg>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button className="ghost-btn" disabled={busy} onClick={onImportFile}>
+        📂 파일에서 가져오기 (.json / .txt)
+      </button>
+    </div>
+  );
+
+  const dashboardCard = hasJourney && stats ? (
+    <div className="journey-dashboard">
+      <p className="journey-headline">
+        지금까지 <b>{stats.adventures}</b>개의 세계를 열고, <b>{stats.turns.toLocaleString()}</b>번의
+        이야기를 이어왔어요 ✨
+      </p>
+      <div className="journey-stats">
+        <div className="journey-stat">
+          <span className="journey-icon">🌍</span>
+          <span className="journey-num">{stats.adventures.toLocaleString()}</span>
+          <span className="journey-cap">떠난 모험</span>
+        </div>
+        <div className="journey-stat">
+          <span className="journey-icon">📖</span>
+          <span className="journey-num">{stats.turns.toLocaleString()}</span>
+          <span className="journey-cap">이야기 턴</span>
+        </div>
+        <div className="journey-stat">
+          <span className="journey-icon">🖼️</span>
+          <span className="journey-num">{stats.images.toLocaleString()}</span>
+          <span className="journey-cap">그려낸 삽화</span>
+        </div>
+        <div className="journey-stat">
+          <span className="journey-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+            </svg>
+          </span>
+          <span className="journey-num">{fmtCompact(stats.tokens)}</span>
+          <span className="journey-cap">자아낸 단어</span>
+        </div>
+      </div>
+      <p className="journey-foot">오늘은 또 어떤 이야기가 당신을 기다리고 있을까요?</p>
+    </div>
+  ) : null;
+
+  const guideCard = (
+    <div className="start-card guide-card">
+      <h2>이용 안내</h2>
+      <ul className="guide-list">
+        <li>
+          <b>🖼️ 장면을 이미지로</b> — 진행 중 마음에 드는 문장을 <b>드래그</b>하면
+          나타나는 <b>'이미지로 변환'</b> 버튼으로 그 장면의 삽화를 생성할 수 있어요.
+        </li>
+        <li>
+          <b>💬 두 가지 진행 방식</b> — 입력창 오른쪽 <b>서식 선택기</b>에서 고를 수 있어요.
+          <b>일반 서술</b>은 소설처럼 이야기가 자연스럽게 이어지고,
+          <b>객관식 전개</b>는 상황 묘사 후 A·B·C 선택지를 제시합니다.
+        </li>
+        <li>
+          <b>⚙️ 모델 설정</b> — 상단 <b>[도구] 모델 설정</b>에서 AI 모델을 고를 수 있어요.
+          <b>{TEXT_TIERS[0].label}</b>은 빠르고 저렴하며,
+          <b>{TEXT_TIERS[1].label}</b>은 더 풍부한 묘사를 제공하지만 크레딧이 약 3배 소모돼요.
+        </li>
+      </ul>
+    </div>
+  );
+
+  const newGameCard = (
+    <div className="start-card">
+      <h2>새 모험 시작</h2>
+      <div className="choice-group">
+        <span className="choice-label">🌍 세계관</span>
+        {renderChips(GENRES, genre, pick('genre', setGenre), genreCustom, setGenreCustom)}
+      </div>
+      <div className="choice-group">
+        <span className="choice-label">🧑 주인공</span>
+        {renderChips(PROTAGONISTS, hero, pick('hero', setHero), heroCustom, setHeroCustom)}
+      </div>
+      <div className="choice-group choice-group-inline">
+        <span className="choice-label">⚧ 성별</span>
+        {renderChips(GENDERS, gender, pick('gender', setGender))}
+      </div>
+      <div className="choice-group choice-group-inline">
+        <span className="choice-label">🎂 연령</span>
+        {renderChips(AGES, age, pick('age', setAge))}
+      </div>
+      <div className="choice-group">
+        <span className="choice-label">🎭 분위기</span>
+        {renderChips(MOODS, mood, pick('mood', setMood), moodCustom, setMoodCustom)}
+      </div>
+      <input
+        type="text"
+        placeholder="모험 제목 (선택 - 비우면 자동 생성)"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <textarea
+        rows={2}
+        placeholder="추가로 원하는 설정이 있다면 적어주세요 (선택). 예: 주인공 이름은 '리안', 비 내리는 밤에 시작"
+        value={extra}
+        onChange={(e) => setExtra(e.target.value)}
+      />
+      <button className="btn-primary" disabled={busy || !choiceReady} onClick={handleStart}>
+        {busy ? '오프닝 장면 생성 중...' : !choiceReady ? '모든 항목을 골라주세요' : '✦ 모험 시작'}
+      </button>
+    </div>
+  );
+
   return (
     <div id="start-screen">
       <StarfieldBackground tints={tints} />
       <h1>📜 텍스트 RPG</h1>
       <p className="subtitle">AI와 떠나는, 오직 나만의 이야기</p>
 
-      {hasJourney && stats && (
-        <div className="journey-dashboard">
-          <p className="journey-headline">
-            지금까지 <b>{stats.adventures}</b>개의 세계를 열고, <b>{stats.turns.toLocaleString()}</b>번의
-            이야기를 이어왔어요 ✨
-          </p>
-          <div className="journey-stats">
-            <div className="journey-stat">
-              <span className="journey-icon">🌍</span>
-              <span className="journey-num">{stats.adventures.toLocaleString()}</span>
-              <span className="journey-cap">떠난 모험</span>
-            </div>
-            <div className="journey-stat">
-              <span className="journey-icon">📖</span>
-              <span className="journey-num">{stats.turns.toLocaleString()}</span>
-              <span className="journey-cap">이야기 턴</span>
-            </div>
-            <div className="journey-stat">
-              <span className="journey-icon">🖼️</span>
-              <span className="journey-num">{stats.images.toLocaleString()}</span>
-              <span className="journey-cap">그려낸 삽화</span>
-            </div>
-            <div className="journey-stat">
-              <span className="journey-icon">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
-                  <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
-                </svg>
-              </span>
-              <span className="journey-num">{fmtCompact(stats.tokens)}</span>
-              <span className="journey-cap">자아낸 단어</span>
-            </div>
-          </div>
-          <p className="journey-foot">
-            오늘은 또 어떤 이야기가 당신을 기다리고 있을까요?
-          </p>
-        </div>
-      )}
-
-      {/* 이어하기 기록이 있으면 이어하기 카드를 먼저 */}
-      {(savesLoading || saves.length > 0) && (
-        <div className="start-card">
-          <h2>이어하기</h2>
-          {savesLoading ? (
-            <p>저장 목록을 불러오는 중...</p>
-          ) : (
-            <ul className="save-list">
-              {saves.map((s) => (
-                <li key={s.id} className="save-item">
-                  <button className="save-open" disabled={busy} onClick={() => onContinue(s.id)}>
-                    <span className="save-title">{s.title}</span>
-                    <span className="save-meta">{s.turnCount}턴 · {formatDate(s.updatedAt)}</span>
-                  </button>
-                  <button className="save-delete" disabled={busy} title="삭제" onClick={() => onDelete(s.id)}>
-                    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor"
-                      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4h8v2" />
-                      <path d="M6 6l1 14h10l1-14" />
-                      <path d="M10 11v6M14 11v6" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <button className="ghost-btn" disabled={busy} onClick={onImportFile}>
-            📂 파일에서 가져오기 (.json / .txt)
-          </button>
-        </div>
-      )}
-
-      <div className="start-card">
-        <h2>새 모험 시작</h2>
-        <div className="choice-group">
-          <span className="choice-label">🌍 세계관</span>
-          {renderChips(GENRES, genre, pick('genre', setGenre), genreCustom, setGenreCustom)}
-        </div>
-
-        <div className="choice-group">
-          <span className="choice-label">🧑 주인공</span>
-          {renderChips(PROTAGONISTS, hero, pick('hero', setHero), heroCustom, setHeroCustom)}
-        </div>
-
-        <div className="choice-group choice-group-inline">
-          <span className="choice-label">⚧ 성별</span>
-          {renderChips(GENDERS, gender, pick('gender', setGender))}
-        </div>
-
-        <div className="choice-group choice-group-inline">
-          <span className="choice-label">🎂 연령</span>
-          {renderChips(AGES, age, pick('age', setAge))}
-        </div>
-
-        <div className="choice-group">
-          <span className="choice-label">🎭 분위기</span>
-          {renderChips(MOODS, mood, pick('mood', setMood), moodCustom, setMoodCustom)}
-        </div>
-
-        <input
-          type="text"
-          placeholder="모험 제목 (선택 - 비우면 자동 생성)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <textarea
-          rows={2}
-          placeholder="추가로 원하는 설정이 있다면 적어주세요 (선택). 예: 주인공 이름은 '리안', 비 내리는 밤에 시작"
-          value={extra}
-          onChange={(e) => setExtra(e.target.value)}
-        />
-
-        <button className="btn-primary" disabled={busy || !choiceReady} onClick={handleStart}>
-          {busy
-            ? '오프닝 장면 생성 중...'
-            : !choiceReady
-              ? '모든 항목을 골라주세요'
-              : '✦ 모험 시작'}
-        </button>
-      </div>
-
-      {/* 이어하기 기록 없을 때 파일 불러오기 + 이용 안내 */}
-      {!savesLoading && saves.length === 0 && (
-        <div className="start-card guide-card">
-          <button className="ghost-btn" disabled={busy} onClick={onImportFile} style={{ marginBottom: 16 }}>
-            📂 파일에서 가져오기 (.json / .txt)
-          </button>
-          <h2>이용 안내</h2>
-          <ul className="guide-list">
-            <li>
-              <b>🖼️ 장면을 이미지로</b> — 진행 중 마음에 드는 문장을 <b>드래그</b>하면
-              나타나는 <b>'이미지로 변환'</b> 버튼으로 그 장면의 삽화를 생성할 수 있어요.
-            </li>
-            <li>
-              <b>💬 두 가지 진행 방식</b> — 입력창 오른쪽 <b>서식 선택기</b>에서 고를 수 있어요.
-              <b>일반 서술</b>은 소설처럼 이야기가 자연스럽게 이어지고,
-              <b>객관식 전개</b>는 상황 묘사 후 A·B·C 선택지를 제시합니다.
-            </li>
-            <li>
-              <b>⚙️ 모델 설정</b> — 상단 <b>[도구] 모델 설정</b>에서 AI 모델을 고를 수 있어요.
-              <b>{TEXT_TIERS[0].label}</b>은 빠르고 저렴하며,
-              <b>{TEXT_TIERS[1].label}</b>은 더 풍부한 묘사를 제공하지만 크레딧이 약 3배 소모돼요.
-            </li>
-          </ul>
-        </div>
+      {hasSaves ? (
+        /* 이어하기 기록 있음: 이어하기 → 대시보드 → 이용안내 → 새모험 */
+        <>
+          {savesCard}
+          {dashboardCard}
+          {guideCard}
+          {newGameCard}
+        </>
+      ) : (
+        /* 이어하기 기록 없음: 새모험 → 대시보드 → 이용안내 → 이어하기(불러오기) */
+        <>
+          {newGameCard}
+          {dashboardCard}
+          {guideCard}
+          {savesCard}
+        </>
       )}
     </div>
   );
