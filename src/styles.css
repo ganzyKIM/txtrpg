@@ -657,6 +657,49 @@ select.mode-select:focus { border-color: #1a73e8; }
 }
 #start-screen .guide-list b { color: #8db4ff; }
 
+/* ── Setup choice picker ─────────────────────────────────── */
+.setup-mode-tabs {
+  display: flex; gap: 6px; margin: 4px 0 14px;
+  background: rgba(8,13,32,0.5); padding: 4px;
+  border-radius: 10px; border: 1px solid rgba(150,180,255,0.14);
+}
+.setup-tab {
+  flex: 1; padding: 8px 12px; font-size: 13px; font-weight: 600;
+  background: none; border: none; border-radius: 7px;
+  color: #8b98bd; cursor: pointer; font-family: inherit;
+  transition: background 0.14s, color 0.14s;
+}
+.setup-tab.active { background: rgba(109,155,255,0.22); color: #fff; }
+.setup-tab:hover:not(.active) { color: #c3cde8; }
+
+.setup-hint { font-size: 13px; color: #9fb0d8; margin: 0 0 14px; }
+
+.choice-group { margin-bottom: 16px; }
+.choice-label {
+  display: block; font-size: 12px; font-weight: 700;
+  color: #aebbe2; margin-bottom: 8px; letter-spacing: 0.01em;
+}
+.choice-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 13px; font-size: 13px; font-weight: 500;
+  background: rgba(10,16,38,0.55); color: #c3cde8;
+  border: 1px solid rgba(150,180,255,0.16); border-radius: 20px;
+  cursor: pointer; font-family: inherit;
+  transition: background 0.14s, border-color 0.14s, color 0.14s, transform 0.08s;
+}
+.choice-chip .chip-icon { font-size: 15px; line-height: 1; }
+.choice-chip:hover {
+  border-color: rgba(150,180,255,0.4); color: #fff;
+  background: rgba(20,30,60,0.7);
+}
+.choice-chip.selected {
+  background: linear-gradient(135deg, rgba(109,155,255,0.85), rgba(80,120,230,0.85));
+  border-color: #8db4ff; color: #fff;
+  box-shadow: 0 4px 16px rgba(80,120,230,0.4);
+}
+.choice-chip:active { transform: scale(0.96); }
+
 #start-screen .start-card input[type="text"],
 #start-screen .start-card textarea {
   background: rgba(8,13,32,0.6); color: #eaf0ff;

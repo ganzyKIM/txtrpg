@@ -34,6 +34,35 @@ const SETUP_PLACEHOLDER = `자유롭게 원하는 세계와 주인공을 설정�
 - 주인공: 강민준. 35세 형사. 능력은 없지만 특유의 직감과 끈질김으로 사건을 해결한다.
 - 시작 상황: 연쇄 실종 사건을 조사하다 피해자 모두 초능력자였다는 사실을 알게 된다.`;
 
+interface Choice {
+  label: string;
+  icon: string;
+  snippet: string;
+}
+
+const GENRES: Choice[] = [
+  { label: '정통 판타지', icon: '⚔️', snippet: '검과 마법이 살아 숨쉬는 중세 판타지 세계. 모험가와 왕국, 던전과 마물, 고대의 전설이 존재한다.' },
+  { label: 'SF·우주', icon: '🚀', snippet: '인류가 별과 별 사이를 오가는 먼 미래. 첨단 기술과 외계 문명, 거대한 우주선과 식민 행성이 펼쳐진다.' },
+  { label: '현대 도시', icon: '🌆', snippet: '겉으로는 평범한 현대 도시. 그러나 그 이면에는 숨겨진 비밀과 초자연적 존재가 도사린다.' },
+  { label: '무협·동양', icon: '🐉', snippet: '무공과 협객이 강호를 누비는 동양 무협 세계. 문파와 비급, 은원과 강호의 의리가 얽힌다.' },
+  { label: '호러·미스터리', icon: '🕯️', snippet: '한 치 앞을 알 수 없는 미스터리와 공포가 감도는 세계. 풀리지 않는 수수께끼와 보이지 않는 위협이 주인공을 옥죈다.' },
+  { label: '학원·일상', icon: '🌸', snippet: '청춘과 우정, 설렘이 가득한 학원·일상 무대. 평범한 하루 속에서 작지만 특별한 사건들이 벌어진다.' },
+];
+
+const PROTAGONISTS: Choice[] = [
+  { label: '평범한 주인공', icon: '🙂', snippet: '어디에나 있을 법한 평범한 인물이지만, 운명에 이끌려 비범한 사건에 휘말린다.' },
+  { label: '숨은 능력자', icon: '✨', snippet: '남들이 모르는 특별한 힘이나 재능을 지녔지만 그것을 숨기고 살아가는 인물.' },
+  { label: '노련한 전문가', icon: '🎯', snippet: '자신의 분야에서 잔뼈가 굵은 베테랑. 냉철하고 노련하지만 남모를 사연을 품고 있다.' },
+  { label: '정체불명의 이방인', icon: '🌫️', snippet: '과거나 기억이 베일에 싸인 인물. 자신이 누구인지조차 이야기를 따라 차차 밝혀나가야 한다.' },
+];
+
+const MOODS: Choice[] = [
+  { label: '밝고 유쾌한', icon: '☀️', snippet: '밝고 유쾌하며 경쾌한 모험. 위기 속에서도 유머와 따뜻함을 잃지 않는다.' },
+  { label: '진지한 서사', icon: '🏛️', snippet: '진지하고 장대한 서사. 운명과 선택, 성장과 희생이 묵직하게 그려진다.' },
+  { label: '어둡고 긴장감', icon: '🌑', snippet: '어둡고 긴장감 넘치는 분위기. 한 치 앞을 알 수 없는 위험과 서스펜스가 감돈다.' },
+  { label: '잔잔하고 감성적', icon: '🍃', snippet: '잔잔하고 서정적인 분위기. 인물의 감정과 관계, 일상의 작은 순간들이 섬세하게 그려진다.' },
+];
+
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(
@@ -53,8 +82,38 @@ export default function StartScreen({
 }: Props) {
   const [title, setTitle] = useState('');
   const [setup, setSetup] = useState('');
+  const [setupMode, setSetupMode] = useState<'choice' | 'free'>('choice');
+  const [genre, setGenre] = useState<number | null>(null);
+  const [hero, setHero] = useState<number | null>(null);
+  const [mood, setMood] = useState<number | null>(null);
+  const [extra, setExtra] = useState('');
 
   const hasJourney = !!stats && (stats.turns > 0 || stats.adventures > 0);
+
+  const choiceReady = genre !== null && hero !== null && mood !== null;
+
+  function buildChoiceSetup(): string {
+    const lines = [
+      `- 세계관: ${GENRES[genre!].snippet}`,
+      `- 주인공: ${PROTAGONISTS[hero!].snippet}`,
+      `- 분위기: ${MOODS[mood!].snippet}`,
+    ];
+    if (extra.trim()) lines.push(`- 추가 요청: ${extra.trim()}`);
+    return lines.join('\n');
+  }
+
+  function handleStart() {
+    if (setupMode === 'choice') {
+      if (!choiceReady) return;
+      const autoTitle = title.trim() || `${GENRES[genre!].label} 모험`;
+      onNewGame(autoTitle, buildChoiceSetup());
+    } else {
+      if (!setup.trim()) return;
+      onNewGame(title.trim() || '새 모험', setup.trim());
+    }
+  }
+
+  const startDisabled = busy || (setupMode === 'choice' ? !choiceReady : !setup.trim());
 
   return (
     <div id="start-screen">
@@ -154,24 +213,105 @@ export default function StartScreen({
 
       <div className="start-card">
         <h2>새 모험 시작</h2>
-        <p>세계관과 주인공을 간단히 설명하면 AI가 오프닝 장면을 만들어 드립니다.</p>
-        <input
-          type="text"
-          placeholder="모험 제목 (예: 은하의 끝에서)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <textarea
-          rows={9}
-          placeholder={SETUP_PLACEHOLDER}
-          value={setup}
-          onChange={(e) => setSetup(e.target.value)}
-        />
-        <button
-          className="btn-primary"
-          disabled={busy || !setup.trim()}
-          onClick={() => onNewGame(title.trim() || '새 모험', setup.trim())}
-        >
+        <div className="setup-mode-tabs">
+          <button
+            className={setupMode === 'choice' ? 'setup-tab active' : 'setup-tab'}
+            onClick={() => setSetupMode('choice')}
+          >
+            간편 선택
+          </button>
+          <button
+            className={setupMode === 'free' ? 'setup-tab active' : 'setup-tab'}
+            onClick={() => setSetupMode('free')}
+          >
+            직접 작성
+          </button>
+        </div>
+
+        {setupMode === 'choice' ? (
+          <>
+            <p className="setup-hint">몇 가지만 고르면 AI가 나머지 이야기를 만들어 드려요.</p>
+
+            <div className="choice-group">
+              <span className="choice-label">🌍 세계관</span>
+              <div className="choice-chips">
+                {GENRES.map((c, i) => (
+                  <button
+                    key={i}
+                    className={genre === i ? 'choice-chip selected' : 'choice-chip'}
+                    onClick={() => setGenre(i)}
+                  >
+                    <span className="chip-icon">{c.icon}</span>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="choice-group">
+              <span className="choice-label">🧑 주인공</span>
+              <div className="choice-chips">
+                {PROTAGONISTS.map((c, i) => (
+                  <button
+                    key={i}
+                    className={hero === i ? 'choice-chip selected' : 'choice-chip'}
+                    onClick={() => setHero(i)}
+                  >
+                    <span className="chip-icon">{c.icon}</span>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="choice-group">
+              <span className="choice-label">🎭 분위기</span>
+              <div className="choice-chips">
+                {MOODS.map((c, i) => (
+                  <button
+                    key={i}
+                    className={mood === i ? 'choice-chip selected' : 'choice-chip'}
+                    onClick={() => setMood(i)}
+                  >
+                    <span className="chip-icon">{c.icon}</span>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <input
+              type="text"
+              placeholder="모험 제목 (선택 - 비우면 자동 생성)"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <textarea
+              rows={2}
+              placeholder="원하는 디테일이 있다면 자유롭게 적어주세요 (선택). 예: 주인공 이름은 '리안', 비 내리는 밤에 시작"
+              value={extra}
+              onChange={(e) => setExtra(e.target.value)}
+            />
+          </>
+        ) : (
+          <>
+            <p className="setup-hint">세계관과 주인공을 직접 자유롭게 설정하세요.</p>
+            <input
+              type="text"
+              placeholder="모험 제목 (예: 은하의 끝에서)"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <textarea
+              rows={9}
+              placeholder={SETUP_PLACEHOLDER}
+              value={setup}
+              onChange={(e) => setSetup(e.target.value)}
+            />
+          </>
+        )}
+
+        <button className="btn-primary" disabled={startDisabled} onClick={handleStart}>
           {busy ? '오프닝 장면 생성 중...' : '✦ 모험 시작'}
         </button>
       </div>
