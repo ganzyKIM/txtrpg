@@ -86,6 +86,40 @@ const AGES: Choice[] = [
   { label: '미상', icon: '❔', color: [172, 172, 192], snippet: '나이는 자유롭게' },
 ];
 
+/** 제목 미입력 시 라노벨풍 제목 자동 생성 */
+function makeAutoTitle(genreIdx: number, heroIdx: number): string {
+  const rand = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+  const gWords = [
+    '마왕이 군림하는 왕국', 'SF 항성계의 끝', '평범해 보이는 이 도시',
+    '강호', '어둠 속에 숨겨진 진실', '방과 후 옥상',
+    '네온이 번지는 메가시티', '종말 이후의 세계', '증기 태엽 도시',
+    '신들이 전쟁을 벌이는 시대', '끝없는 바다', '이 세계',
+  ];
+  const hWords = [
+    '평범했던 나', '숨어 살던 최강자', '지친 베테랑',
+    '정체불명의 이방인', '몰락한 귀족', '천재 발명가',
+    '정처 없는 방랑자', '복수를 벼르는 자', '예언의 주인공',
+    '경계를 거부한 아웃사이더', '주인공',
+  ];
+
+  const g = gWords[Math.min(genreIdx, gWords.length - 1)];
+  const h = hWords[Math.min(heroIdx, hWords.length - 1)];
+
+  return rand([
+    `${g}에서 시작된 ${h}의 이야기`,
+    `어쩌다 ${g}에 떨어진 ${h}`,
+    `${h}, ${g}를 걷다`,
+    `${g}의 하늘 아래, ${h}`,
+    `${h}이 ${g}를 바꾼 기록`,
+    `전생했더니 ${g}의 ${h}이었다`,
+    `${g}에서 전설이 된 ${h}`,
+    `세상은 ${h}에게 ${g}를 내밀었다`,
+    `${g}에서 만난 ${h}의 비밀`,
+    `${h}과 ${g}의 연대기`,
+  ]);
+}
+
 /** 칩을 고를 때마다 새 발원점을 무작위로 — 화면 가장자리는 살짝 피한다 */
 interface Origin {
   fx: number;
@@ -201,7 +235,7 @@ export default function StartScreen({
 
   function handleStart() {
     if (!choiceReady) return;
-    const autoTitle = title.trim() || `${GENRES[genre!].label} 모험`;
+    const autoTitle = title.trim() || makeAutoTitle(genre!, hero!);
     onNewGame(autoTitle, buildChoiceSetup(), combinedTint());
   }
 
