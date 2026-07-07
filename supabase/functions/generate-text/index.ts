@@ -32,6 +32,10 @@ interface ModelCfg {
   model: string;
   in_rate: number; // USD per 1M input tokens
   out_rate: number; // USD per 1M output tokens
+  /** thinking(사고) 토큰 예산. 0 = 사고 비활성화, 미설정 = 모델 기본값.
+   *  사고 토큰은 출력 토큰 단가로 청구되므로 예/아니오 판정 등
+   *  사고가 불필요한 티어는 0으로 두면 비용이 크게 준다. */
+  thinking?: number;
 }
 
 Deno.serve(async (req) => {
@@ -74,13 +78,17 @@ Deno.serve(async (req) => {
       return json({ error: '크레딧이 부족합니다. 충전이 필요합니다.' }, 402);
     }
 
+    const generationConfig: Record<string, unknown> = { temperature: temperature ?? 0.75 };
+    if (typeof m.thinking === 'number') {
+      generationConfig.thinkingConfig = { thinkingBudget: m.thinking };
+    }
     const body: Record<string, unknown> = {
       contents: (messages as Array<{ role: string; text: string }>).map((x) => ({
         role: x.role,
         parts: [{ text: x.text }],
       })),
       safetySettings: SAFETY_SETTINGS,
-      generationConfig: { temperature: temperature ?? 0.75 },
+      generationConfig,
     };
     if (system) body.system_instruction = { parts: [{ text: system }] };
 
@@ -97,16 +105,19 @@ Deno.serve(async (req) => {
 
     const inTok: number = gData.usageMetadata?.promptTokenCount ?? 0;
     const outTok: number = gData.usageMetadata?.candidatesTokenCount ?? 0;
+    // 사고(thinking) 토큰 — candidatesTokenCount에 포함되지 않지만
+    // Google은 출력 토큰 단가로 청구하므로 반드시 과금에 포함해야 한다.
+    const thinkTok: number = gData.usageMetadata?.thoughtsTokenCount ?? 0;
     const credits = Math.max(
       1,
-      Math.ceil(((inTok * m.in_rate + outTok * m.out_rate) / 1_000_000) * fx * markup),
+      Math.ceil(((inTok * m.in_rate + (outTok + thinkTok) * m.out_rate) / 1_000_000) * fx * markup),
     );
 
     const { data: balance, error: spendErr } = await admin.rpc('spend_credits', {
       p_user: user.id,
       p_amount: credits,
       p_type: 'spend_text',
-      p_meta: { tier, model: m.model, in: inTok, out: outTok },
+      p_meta: { tier, model: m.model, in: inTok, out: outTok, think: thinkTok },
     });
     if (spendErr) return json({ error: '크레딧 차감 실패: ' + spendErr.message }, 500);
 
