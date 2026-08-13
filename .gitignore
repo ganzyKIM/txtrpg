@@ -1,6 +1,7 @@
 node_modules/
 dist/
 tmp/
+.serena/
 .env.local
 .env*.local
 

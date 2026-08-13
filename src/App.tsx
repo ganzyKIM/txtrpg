@@ -23,6 +23,7 @@ import SettingsModal from './components/SettingsModal';
 import MemoryPanel from './components/MemoryPanel';
 import StartScreen from './components/StartScreen';
 import WormholeTransition from './components/WormholeTransition';
+import FirstRunGuide from './components/FirstRunGuide';
 import LoginScreen from './auth/LoginScreen';
 import AdminPanel from './admin/AdminPanel';
 import { useAuth } from './auth/AuthContext';
@@ -67,6 +68,7 @@ export default function App() {
   const [warpTint, setWarpTint] = useState<[number, number, number] | undefined>(undefined);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
+  const [showFirstRunGuide, setShowFirstRunGuide] = useState(false);
   const warpStartRef = useRef(0);
   const memoryBusyRef = useRef(false);
 
@@ -216,7 +218,9 @@ export default function App() {
 
 ${setup}
 
-주인공의 시점에서 몰입감 있는 오프닝 장면을 라이트노벨 문체로 묘사하라. 세계의 분위기와 풍경, 주인공의 내면과 감정, 등장인물의 대사와 표정을 오감을 살려 생생하게 그려내고, 최소 5~8개 문단 분량으로 충분히 길고 자세하게 전개하라. 이것은 앞으로 여러 턴에 걸쳐 길게 이어질 이야기의 '시작'일 뿐이니, 오프닝에서 모든 것을 보여주거나 큰 사건을 단숨에 터뜨리지 말고, 세계와 인물을 차분히 펼쳐 보이며 호기심과 떡밥을 남겨라. 마지막에 주인공이 처한 첫 상황을 제시하라. 마크다운 없이 본문만 작성하라.`;
+주인공의 시점에서 몰입감 있는 오프닝 장면을 라이트노벨 문체로 묘사하라. 세계의 분위기와 풍경, 주인공의 내면과 감정, 등장인물의 대사와 표정을 오감을 살려 생생하게 그려내고, 최소 5~8개 문단 분량으로 충분히 길고 자세하게 전개하라. 이것은 앞으로 여러 턴에 걸쳐 길게 이어질 이야기의 '시작'일 뿐이니, 오프닝에서 모든 것을 보여주거나 큰 사건을 단숨에 터뜨리지 말고, 세계와 인물을 차분히 펼쳐 보이며 호기심과 떡밥을 남겨라. 마크다운 없이 본문만 작성하라.
+
+${MODE_INSTRUCTIONS.choice}`;
 
     // 세이브 생성 + 첫 AI 응답을 워프 애니메이션 중에 병렬 실행
     const system = buildSystemInstruction(game);
@@ -245,6 +249,7 @@ ${setup}
     setCurrentSaveId(id);
     dispatch({ type: 'load', game: gameWithOpening });
     endWarp();
+    if (firstTurn) setShowFirstRunGuide(true);
 
     if (firstTurn) {
       void runMemoryMaintenance(gameWithOpening);
@@ -495,6 +500,7 @@ ${store.game.fixedMemory}
         />
       )}
       {showAdmin && profile?.is_admin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      {showFirstRunGuide && <FirstRunGuide onClose={() => setShowFirstRunGuide(false)} />}
       <WormholeTransition active={warping} label={warpLabel} tint={warpTint} />
     </>
   );
