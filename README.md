@@ -80,4 +80,4 @@ supabase functions deploy admin
 - Edge Function에 CSAM 최소 가드 (서버측 차단)
 - 이용약관 / 환불 안내 UI
 - Supabase 무료티어 한계 점검 (Storage 1GB, 7일 미사용 시 일시정지)
-- 구버전에 하드코딩됐던 Gemini 키 폐기·재발급 확인
+- 이전에 발급한 Gemini 키 정리 (현재 키는 Edge Function 시크릿에만 존재)
